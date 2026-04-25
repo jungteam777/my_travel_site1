@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하누리 여행사 - 공식 홈페이지</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        /* [공통 스타일] */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: "Pretendard", sans-serif; 
+            background-color: #fff;
+            overflow-y: auto; /* 세로 스크롤은 무조건 허용 */
+            overflow-x: hidden; /* 가로 스크롤만 방지 */
+        }
+
+        /* 각 섹션: 내용물이 들어오면 높이가 자동으로 늘어남 */
+         /* 헤더만 상단 고정 */
+       
+
+        .main-section { 
+            width: 100%; 
+            position: relative; 
+            margin-bottom: 100px;
+        }
+
+        #header-load { 
+            
+            background: #fff;
+            margin-bottom: 0;
+          
+        }
+         
+         #footer-load {
+        margin-bottom: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="header-load" class="main-section"></div>
+    <div id="banner-load" class="main-section"></div>
+    <div id="products-load" class="main-section"></div>
+    <div id="mdpick-load" class="main-section"></div>
+    <div id="reviews-load" class="main-section"></div>
+    <div id="footer-load" class="main-section"></div>
+
+    <script>
+        // 파일을 불러와서 HTML에 꽂아넣는 핵심 함수
+        async function loadComponent(id, filePath) {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error('파일 없음: ' + filePath);
+                
+                const htmlContent = await response.text();
+                const targetElement = document.getElementById(id);
+                targetElement.innerHTML = htmlContent;
+
+                // 불러온 파일 안에 있는 <script> 태그 실행시키기
+                const scripts = targetElement.querySelectorAll("script");
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement("script");
+                    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+            } catch (error) {
+                console.error("에러 발생:", error);
+            }
+        }
+
+        // 페이지 시작 시 순서대로 로딩 (중요!)
+        async function initSite() {
+            await loadComponent('header-load', 'header.html');
+            await loadComponent('banner-load', 'components/banner.html');
+            await loadComponent('products-load', 'components/products.html');
+            await loadComponent('mdpick-load', 'components/md_pick.html');
+            await loadComponent('reviews-load', 'components/reviews.html');
+            await loadComponent('footer-load', 'footer.html');
+        }
+
+        initSite();
+    </script>
+</body>
+</html>

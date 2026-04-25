@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; background-color: #fff; color: #333; }
+        .product-list-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; min-height: 500px; }
+        .product-card { display: flex; border-bottom: 1px solid #eee; padding: 20px 0; gap: 20px; align-items: flex-start; }
+        .product-img { width: 300px; min-width: 300px; height: 180px; border-radius: 8px; object-fit: cover; background-color: #f0f0f0; }
+        .product-info { flex: 1; display: flex; flex-direction: column; position: relative; min-height: 180px; }
+        .product-title { font-size: 18px; font-weight: 700; color: #000; margin: 0 0 8px 0; line-height: 1.4; padding-right: 140px; text-align: left; }
+        .product-price { position: absolute; top: 0; right: 0; font-size: 22px; font-weight: 700; color: #333; }
+        .price-unit { font-size: 14px; font-weight: 400; color: #888; }
+        .product-tags { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 50px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: left; }
+        .detail-btn { position: absolute; bottom: 0; right: 0; padding: 8px 20px; border: 1px solid #333; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 30px 0; }
+        .page-btn { width: 35px; height: 35px; border: 1px solid #ddd; background: #fff; color: #666; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 14px; }
+        .page-btn.active { background: #333; color: #fff; border-color: #333; }
+        @media (max-width: 768px) {
+            .product-card { flex-direction: column; padding: 15px 0; gap: 12px; }
+            .product-img { width: 100%; min-width: 100%; height: auto; aspect-ratio: 16/9; }
+            .product-info { width: 100%; min-height: auto; }
+            .product-title { padding-right: 0; font-size: 16px; }
+            .product-price { position: static; text-align: left; font-size: 18px; margin-bottom: 10px; }
+            .detail-btn { position: static; width: 100%; text-align: center; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="product-list-container" id="listBody">
+        <p style="text-align:center; padding:100px; color:#999;">상품 정보를 불러오고 있습니다...</p>
+    </div>
+
+    <div id="pagination" class="pagination"></div>
+
+    <script>
+    // 전역 변수 선언 (메인에서 호출 가능하게)
+    if (typeof rawData === 'undefined') var rawData = [];
+    if (typeof allItems === 'undefined') var allItems = [];
+    var currentPage = 1;
+    const itemsPerPage = 7;
+
+    async function loadData() {
+        const listBody = document.getElementById('listBody');
+        try {
+            // [중요] america 폴더 안이므로 상위 폴더의 json을 찾도록 경로 수정
+            const response = await fetch('../json/products.json');
+            
+            if (!response.ok) throw new Error('파일 로드 실패');
+            
+            rawData = await response.json();
+            
+            // 현재 카테고리 확인 (index.html 주소창 기준)
+            const params = new URLSearchParams(window.location.search);
+            const currentCategory = params.get('cat') || "미국여행";
+            
+            // [수정된 로직] 카테고리명뿐만 아니라 지역명(미서부, 미동부 등)도 검색하게 함
+            allItems = rawData.filter(item => 
+                item["카테고리"] === currentCategory || item["지역"] === currentCategory
+            );
+            
+            if (allItems.length === 0) {
+                listBody.innerHTML = `<p style="text-align:center; padding:100px; color:#999;">${currentCategory} 상품이 없습니다.</p>`;
+            } else {
+                // 데이터 섞기
+                for (let i = allItems.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+                }
+                renderPage(1);
+            }
+        } catch (error) {
+            console.error("오류:", error);
+            listBody.innerHTML = '<p style="text-align:center; padding:100px; color:red;">데이터 로드 실패 (../json/products.json 경로 확인)</p>';
+        }
+    }
+
+    function renderPage(page) {
+        currentPage = page;
+        const listBody = document.getElementById('listBody');
+        const startIndex = (page - 1) * itemsPerPage;
+        const pageItems = allItems.slice(startIndex, startIndex + itemsPerPage);
+
+        let html = '';
+        pageItems.forEach(item => {
+            const priceValue = Number(item["성인요금"]); // 일단 숫자로 바꿉니다.
+const price = (priceValue > 0) 
+    ? priceValue.toLocaleString() + '<span class="price-unit">원~</span>' 
+    : '가격문의';
+
+
+            // 이미지 경로 수정 (루트 기준이면 /를 붙이세요)
+            const imgUrl = item["메인사진"] ? ('../' + item["메인사진"]) : 'https://via.placeholder.com/300x180';
+            
+            html += `
+                <div class="product-card">
+                    <img src="${imgUrl}" class="product-img">
+                    <div class="product-info">
+                        <div class="product-title">${item["상품명"]}</div>
+                        <div class="product-price">${price}</div>
+                        <div class="product-tags">${item["기본설명"] || ''}</div>
+                        <button class="detail-btn" onclick="top.location.href='../product/index.html?id=${item["상품코드"]}'">상세보기</button>
+                    </div>
+                </div>`;
+        });
+        
+        listBody.innerHTML = html;
+        
+        // 페이지네이션
+        const totalPages = Math.ceil(allItems.length / itemsPerPage);
+        let pgHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            pgHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="renderPage(${i})">${i}</button>`;
+        }
+        document.getElementById('pagination').innerHTML = totalPages > 1 ? pgHtml : '';
+        window.scrollTo(0, 0);
+    }
+
+    // 단독 실행 시에도 작동하게 함
+    loadData();
+    </script>
+</body>
+</html>

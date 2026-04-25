@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body, html { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: #fff; 
+            overflow-x: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 1층: 유틸리티 바 */
+        .top-utility {
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: center;
+            padding: 8px 15px;
+            gap: 20px;
+            font-size: 11px;
+            color: #64748b;
+            position: relative;
+            z-index: 1001;
+        }
+        .user-bold { font-weight: 700; color: #1e293b; }
+        .util-item { text-decoration: none; color: inherit; cursor: pointer; white-space: nowrap; transition: color 0.2s; }
+        .util-item:hover { color: #0f172a; }
+        .blue-txt { color: #2563eb !important; font-weight: 700; }
+        .red-txt { color: #ef4444 !important; font-weight: 700; }
+
+        /* 슬라이딩 로그인 안내바 */
+        #loginAlertBar {
+            position: absolute;
+            top: -50px;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #003366;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #loginAlertBar.active { top: 35px; } 
+        .alert-login-btn {
+            margin-left: 12px;
+            background: #fff;
+            color: #003366;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+            font-weight: 800;
+        }
+
+        /* 메인 헤더 */
+        .header-main {
+            padding: 25px 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            background-color: #fff;
+        }
+
+        .center-logo { text-align: center; cursor: pointer; line-height: 1.1; width: 100%; transition: transform 0.2s; }
+        .center-logo:hover { transform: scale(1.02); }
+        .logo-main { font-weight: 900; font-size: 32px; color: #003366; letter-spacing: -0.05em; }
+        .logo-sub-text { font-size: 15px; font-weight: 800; color: #334155; margin-top: 2px; }
+        .logo-desc { font-size: 10px; color: #94a3b8; letter-spacing: 3px; margin-top: 5px; font-weight: 500; }
+
+        .mobile-action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .left-icons { display: flex; gap: 20px; }
+        .icon-btn { 
+            cursor: pointer; 
+            text-decoration: none; 
+            color: #475569; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            position: relative; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .icon-btn i { font-size: 24px; margin-bottom: 5px; color: #334155; transition: color 0.2s; }
+        .icon-btn span { font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
+        .icon-btn:hover i { color: #003366; }
+        .icon-btn:hover span { color: #003366; }
+
+        .badge {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            background-color: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 12px;
+            border: 2px solid #fff;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mobile-hamburger {
+            font-size: 20px;
+            color: #003366;
+            cursor: pointer;
+            border: 1.5px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        .mobile-hamburger:active { background-color: #f1f5f9; }
+
+        .search-container {
+            padding: 0 15px 20px 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .search-box { position: relative; width: 100%; }
+        .search-box input {
+            width: 100%;
+            padding: 14px 25px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 30px;
+            outline: none;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: #f8fafc;
+            transition: all 0.3s;
+            color: #1e293b;
+        }
+        .search-box input:focus { border-color: #003366; background-color: #fff; box-shadow: 0 4px 12px rgba(0,51,102,0.08); }
+        .search-box .search-icon {
+            position: absolute;
+            right: 20px; top: 50%;
+            transform: translateY(-50%);
+            color: #003366;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .nav-container {
+            display: none;
+            border-top: 1px solid #f1f5f9;
+            border-bottom: 2px solid #f1f5f9;
+            background-color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-section {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .nav-btn {
+            padding: 20px 25px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            letter-spacing: -0.3px;
+        }
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            width: 0; height: 3px;
+            background-color: #003366;
+            transition: all 0.3s;
+            transform: translateX(-50%);
+        }
+        .nav-btn:hover { color: #003366; }
+        .nav-btn:hover::after { width: 60%; }
+        
+        .nav-btn.highlight { color: #ef4444; }
+        .nav-btn.highlight::after { background-color: #ef4444; }
+
+        .mobile-overlay {
+            position: fixed;
+            top: 0; right: -100%;
+            width: 85%; height: 100%;
+            background: #fff;
+            z-index: 10000;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mobile-overlay.active { right: 0; }
+        .close-btn { font-size: 20px; text-align: right; cursor: pointer; margin-bottom: 5px; color: #1e293b; }
+        .m-nav-item { font-size: 14px; font-weight: 700; padding: 15px 8px; border-bottom: 1px solid #f1f5f9; color: #334155; cursor: pointer; }
+        .m-nav-list { padding-bottom: 60px; }
+
+        .hidden { display: none !important; }
+
+        /* 모바일 레이아웃 */
+        @media (max-width: 768px) {
+            #loginAlertBar.active { top: 68px; } 
+            .top-utility { flex-wrap: wrap; justify-content: center; padding: 10px 15px; gap: 10px 15px; }
+            .header-main { flex-direction: column; padding: 20px 15px; gap: 15px; }
+            .center-logo { order: 1; }
+            .mobile-action-bar { order: 2; display: flex; }
+            .search-container { order: 3; padding: 0; }
+            .logo-main { font-size: 28px; }
+        }
+
+        /* PC 레이아웃 수정 및 모바일 메뉴 숨김 */
+        @media (min-width: 769px) {
+            .top-utility { justify-content: flex-end; padding: 8px 60px; gap: 25px; }
+            /* header-main 정렬 수정 */
+            .header-main { flex-direction: row; justify-content: space-between; align-items: center; padding: 30px 60px; gap: 0; }
+            
+            .left-icons { order: 1; flex: 1; justify-content: flex-start; gap: 40px; display: flex; } 
+            .center-logo { order: 2; flex: 1; width: auto; text-align: center; } 
+            .search-container { order: 3; flex: 1; padding: 0; margin: 0; display: flex; justify-content: flex-end; } 
+            .search-box { width: 280px; } 
+            
+            /* PC에서 모바일 햄버거 메뉴 및 관련 바 숨김 */
+            .right-menu { display: none !important; } 
+            .mobile-action-bar { display: contents; } /* 자식인 left-icons가 header-main의 flex 영향을 받도록 함 */
+            
+            .nav-container { display: block; }
+            .logo-main { font-size: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-utility">
+        <span class="user-bold hidden" id="nickname"></span>
+        
+        <a class="util-item hidden" id="infoBtn" onclick="btn('info')">정보수정</a>
+        <a class="util-item blue-txt hidden" id="chargeBtn" onclick="btn('charge')">충전</a>
+        <a class="util-item red-txt hidden" id="withdrawBtn" onclick="btn('withdraw')">출금</a>
+        <a class="util-item" id="loginBtn" onclick="btn('login')">로그인</a>
+        <a class="util-item" id="signupBtn" onclick="btn('signup')">회원가입</a>
+        <a class="util-item" onclick="btn('support')">고객센터</a>
+        <a class="util-item" onclick="btn('announcement')">공지사항</a>
+        <a class="util-item" id="reviewBtn" onclick="btn('review')">여행후기</a>
+        <a class="util-item hidden" id="logoutBtn" onclick="btn('logout')">로그아웃</a>
+
+        <div id="loginAlertBar">
+            로그인 후 이용 가능합니다.
+            <button class="alert-login-btn" onclick="btn('login')">로그인하기</button>
+        </div>
+    </div>
+
+    <header class="header-main">
+        <div class="center-logo" onclick="location.href='/index.html'">
+            <div class="logo-main">HANURI</div>
+            <div class="logo-sub-text">하누리여행사</div>
+            <div class="logo-desc">국내외 여행 전문 기업</div>
+        </div>
+
+        <div class="mobile-action-bar">
+            <div class="left-icons">
+                <a class="icon-btn" onclick="checkAuth('my-menu')">
+                    <i class="fa-regular fa-circle-user"></i>
+                    <span>마이메뉴</span>
+                </a>
+                <a class="icon-btn" onclick="checkAuth('check')">
+                    <i class="fa-regular fa-calendar-check"></i>
+                    <span>예약확인</span>
+                </a>
+                <a class="icon-btn" onclick="checkAuth('wish')">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="badge" id="wishBadge">0</span>
+                    <span>찜목록</span>
+                </a>
+            </div>
+
+            <div class="right-menu">
+                <div class="mobile-hamburger" onclick="toggleM()">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="headerSearchInput" placeholder="설레는 여행, 어디로 떠날까요?" onkeypress="if(event.keyCode==13) executeSearch()">
+                <i class="fa-solid fa-magnifying-glass search-icon" onclick="executeSearch()"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <nav class="nav-section">
+            <div class="nav-btn" onclick="btn('america-travel')">미국여행</div>
+            <div class="nav-btn" onclick="btn('canada-latin')">캐나다/중남미</div>
+            <div class="nav-btn" onclick="btn('europe-africa')">유럽/아프리카</div>
+            <div class="nav-btn" onclick="btn('korea-travel')">국내여행</div>
+            <div class="nav-btn" onclick="btn('asia-seasia')">아시아/동남아</div>
+            <div class="nav-btn" onclick="btn('hotel-vacation')">호캉스</div>
+            <div class="nav-btn highlight" onclick="btn('special-offers')">특가할인상품</div>
+        </nav>
+    </div>
+
+    <div class="mobile-overlay" id="mOverlay">
+        <div class="close-btn" onclick="toggleM()">&times;</div>
+        <div class="m-nav-list">
+            <div class="m-nav-item" onclick="btn('america-travel')">미국여행</div>
+            <div class="m-nav-item" onclick="btn('canada-latin')">캐나다/중남미</div>
+            <div class="m-nav-item" onclick="btn('europe-africa')">유럽/아프리카</div>
+            <div class="m-nav-item" onclick="btn('korea-travel')">국내여행</div>
+            <div class="m-nav-item" onclick="btn('asia-seasia')">아시아/동남아</div>
+            <div class="m-nav-item" onclick="btn('hotel-vacation')">호캉스</div>
+            <div class="m-nav-item" style="color:#ef4444" onclick="btn('special-offers')">특가할인상품</div>
+        </div>
+    </div>
+
+    <script>
+    // 1. 로그인 데이터 감시
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    let isLoggedIn = !!loggedInUser; 
+
+    function executeSearch() {
+        const val = document.getElementById('headerSearchInput').value;
+        if (val.trim() === "") return;
+        location.href = `/search.html?q=${encodeURIComponent(val)}`;
+    }
+
+    function checkAuth(val) {
+        if (!isLoggedIn) {
+            const bar = document.getElementById('loginAlertBar');
+            bar.classList.add('active');
+            setTimeout(() => { bar.classList.remove('active'); }, 3000);
+        } else {
+            btn(val);
+        }
+    }
+
+    function btn(val) {
+        if (!val) return;
+
+        // 2. 로그아웃 로직 처리
+        if (val === 'logout') {
+            if(confirm("로그아웃 하시겠습니까?")) {
+                localStorage.removeItem('loggedInUser');
+                location.reload(); // 현재 페이지 새로고침
+            }
+            return;
+        }
+
+        const menuMap = {
+            'america-travel': '/america/index.html?cat=미국여행',
+            'canada-latin': '/america/index.html?cat=캐나다/중남미',
+            'europe-africa': '/america/index.html?cat=유럽/아프리카',
+            'korea-travel': '/america/index.html?cat=국내여행',
+            'asia-seasia': '/america/index.html?cat=아시아/동남아',
+            'hotel-vacation': '/america/index.html?cat=호캉스',
+            'special-offers': '/america/index.html?cat=특가할인상품'
+        };
+
+        if (menuMap[val]) {
+            location.href = menuMap[val];
+        } else if (val === 'signup') {
+            location.href = '/header/join.html';
+        } else if (val === 'login') {
+            location.href = '/header/login.html';
+        } else if (val === 'info') {
+            location.href = '/header/info.html';
+                 
+        
+        } else {
+            location.href = `/${val}.html`;
+        }
+
+        if(document.getElementById('mOverlay').classList.contains('active')) toggleM();
+    }
+    
+    function toggleM() {
+        document.getElementById('mOverlay').classList.toggle('active');
+    }
+
+    // 3. UI 업데이트 시 실제 이름 반영
+    window.onload = () => {
+        updateUI();
+    };
+
+    function updateUI() {
+        const el = {
+            nick: document.getElementById('nickname'),
+            login: document.getElementById('loginBtn'),
+            signup: document.getElementById('signupBtn'),
+            logout: document.getElementById('logoutBtn'),
+            info: document.getElementById('infoBtn'),
+            charge: document.getElementById('chargeBtn'),
+            withdraw: document.getElementById('withdrawBtn')
+        };
+
+        if (isLoggedIn && loggedInUser) {
+            el.nick.classList.remove('hidden');
+            // '성함'은 members.json에 저장된 필드명에 맞춰주세요.
+            el.nick.innerText = `${loggedInUser["닉네임"] || "사용자"}님 반가워요!`; 
+            el.info.classList.remove('hidden');
+            el.charge.classList.remove('hidden');
+            el.withdraw.classList.remove('hidden');
+            el.logout.classList.remove('hidden');
+            el.login.classList.add('hidden');
+            el.signup.classList.add('hidden');
+        } else {
+            el.nick.classList.add('hidden');
+            el.info.classList.add('hidden');
+            el.charge.classList.add('hidden');
+            el.withdraw.classList.add('hidden');
+            el.logout.classList.add('hidden');
+            el.login.classList.remove('hidden');
+            el.signup.classList.remove('hidden');
+        }
+    }
+    updateUI();
+</script>
+</body>
+</html>

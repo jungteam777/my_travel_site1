@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body { margin: 0; font-family: 'Pretendard', sans-serif; background-color: #fff; padding: 40px 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+        
+        .header { text-align: center; margin-bottom: 50px; }
+        .header h2 { font-size: 30px; margin: 0; color: #111; font-weight: 800; letter-spacing: -1px; }
+        .header .line { width: 30px; height: 2px; background: #111; margin: 20px auto; }
+        .header p { color: #888; margin: 5px 0 0 0; font-size: 16px; }
+
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 20px; 
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+
+        .img-wrap { width: 100%; aspect-ratio: 1 / 1; overflow: hidden; background: #f9f9f9; }
+        .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+        .info-wrap { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .info-wrap .title { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 8px; line-height: 1.4; height: 44px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .info-wrap .desc { font-size: 13px; color: #999; margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .price-wrap { margin-top: auto; padding-top: 10px; border-top: 1px dashed #eee; text-align: right; }
+        .price-wrap .price { font-size: 18px; font-weight: 800; color: #e63946; }
+        .price-wrap .unit { font-size: 13px; color: #333; }
+
+        @media (max-width: 768px) {
+            .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 id="section-title">실시간 추천 여행</h2>
+        <div class="line"></div>
+        <p id="section-desc">지금 가장 사랑받는 코스만 모았습니다.</p>
+    </div>
+
+    <div class="product-grid" id="grid-container">
+        <a href="#" class="card">
+            <div class="img-wrap"><img src="images/product1.jpg" alt="상품1"></div>
+            <div class="info-wrap">
+                <div class="title">미국 서부 그랜드캐년 10일 #캠핑카투어</div>
+                <div class="desc">미국 | 7박 10일</div>
+                <div class="price-wrap"><span class="price">4,500,000</span><span class="unit">원~</span></div>
+            </div>
+        </a>
+        <a href="#" class="card">
+            <div class="img-wrap"><img src="images/product2.jpg" alt="상품2"></div>
+            <div class="info-wrap">
+                <div class="title">스위스 융프라우 요들송 투어 8일</div>
+                <div class="desc">유럽 | 6박 8일</div>
+                <div class="price-wrap"><span class="price">5,200,000</span><span class="unit">원~</span></div>
+            </div>
+        </a>
+        <a href="#" class="card">
+            <div class="img-wrap"><img src="images/product3.jpg" alt="상품3"></div>
+            <div class="info-wrap">
+                <div class="title">다낭 미케비치 휴양 패키지 5일</div>
+                <div class="desc">베트남 | 3박 5일</div>
+                <div class="price-wrap"><span class="price">890,000</span><span class="unit">원~</span></div>
+            </div>
+        </a>
+        <a href="#" class="card">
+            <div class="img-wrap"><img src="images/product4.jpg" alt="상품4"></div>
+            <div class="info-wrap">
+                <div class="title">일본 홋카이도 온천 힐링 4일</div>
+                <div class="desc">일본 | 3박 4일</div>
+                <div class="price-wrap"><span class="price">1,200,000</span><span class="unit">원~</span></div>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

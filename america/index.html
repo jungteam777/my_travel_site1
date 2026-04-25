@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>하누리 여행사</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: "Pretendard", sans-serif; overflow-y: scroll; }
+        .main-section { width: 100%; position: relative; }
+        #list-load { min-height: 800px; padding-bottom: 50px; }
+    </style>
+</head>
+<body>
+
+    <div id="header-load"></div>
+    <div id="menu-load"></div>
+    <div id="list-load"></div>
+    <div id="footer-load"></div>
+
+    <script>
+        // 현재 카테고리 파라미터 미리 정의
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentCat = urlParams.get('cat') || "미국여행";
+
+        async function loadComponent(id, filePath) {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error(`404: ${filePath} 없음`);
+                
+                const htmlContent = await response.text();
+                const target = document.getElementById(id);
+                target.innerHTML = htmlContent;
+
+                // 불러온 HTML 내의 스크립트 추출 및 강제 실행
+                const scripts = target.querySelectorAll("script");
+                for (const oldScript of scripts) {
+                    const newScript = document.createElement("script");
+                    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                    newScript.text = oldScript.text;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function initSite() {
+            // 1. 헤더/푸터 로드
+            await loadComponent('header-load', '../header.html');
+            await loadComponent('footer-load', '../footer.html');
+
+            // 2. 메뉴/리스트 로드 (같은 폴더)
+            await loadComponent('menu-load', 'america_menu.html');
+            await loadComponent('list-load', 'america_list.html');
+
+            // 🚀 [핵심] 리스트 로드 후 데이터 로드 함수가 있다면 강제 호출
+            // 만약 america_list.html 내부에 loadData() 같은 함수가 있다면 여기서 한 번 더 깨워줍니다.
+            if (typeof loadData === 'function') {
+                loadData();
+            }
+        }
+
+        window.onload = initSite;
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; background-color: #fff; text-align: center; }
+        .title-area { padding-top: 50px; padding-bottom: 25px; }
+        .title-area h1 { font-size: 34px; font-weight: 700; color: #111; margin: 0; letter-spacing: -1.5px; }
+        .sub-menu-container { display: flex; justify-content: center; gap: 10px; padding: 15px 20px; background: #fff; flex-wrap: wrap; }
+        .menu-btn { padding: 10px 24px; border: none; border-radius: 50px; background: #f4f4f4; font-size: 14px; font-weight: 600; color: #666; cursor: pointer; white-space: nowrap; }
+        .menu-btn.active { background: #111; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="title-area">
+        <h1 id="mainTitle">로딩 중...</h1>
+    </div>
+
+    <div class="sub-menu-container" id="subMenuBox"></div>
+
+    <script>
+        const categoryData = {
+            "미국여행": ["미국여행", "미서부", "미동부", "하와이", "옐로스톤/러쉬모어/알래스카"],
+            "캐나다/중남미": ["캐나다/중남미", "중남미", "캐나다"],
+            "유럽/아프리카": ["유럽/아프리카", "서유럽", "동유럽/발칸", "지중해"],
+            "국내여행": ["국내여행", "일일투어", "섬투어"],
+            "아시아/동남아": ["아시아/동남아", "일본/중국", "싱가포르/말레이시아/태국", "파타야", "베트남", "푸켓/크라비"],
+            "호캉스": ["호캉스"],
+            "특가할인상품": ["특가할인상품"]
+        };
+
+        (function() {
+            // [중요] 부품으로 로드되므로 최상위창(top)의 URL 파라미터를 읽습니다.
+            const urlParams = new URLSearchParams(window.top.location.search);
+            const currentCat = urlParams.get('cat') || "미국여행"; 
+
+            document.getElementById('mainTitle').innerText = currentCat;
+
+            const menuBox = document.getElementById('subMenuBox');
+            // 전체 카테고리명을 찾기 위한 로직 (예: '미서부'를 눌렀어도 대분류는 '미국여행')
+            let parentCat = currentCat;
+            for (let key in categoryData) {
+                if (categoryData[key].includes(currentCat)) {
+                    parentCat = key;
+                    break;
+                }
+            }
+
+            const subItems = categoryData[parentCat];
+
+            if (subItems && subItems.length > 1) {
+                let btnHtml = "";
+                subItems.forEach((item) => {
+                    const activeClass = (item === currentCat) ? " active" : "";
+                    // [핵심] 클릭 시 부모 창 전체의 주소를 바꿉니다.
+                    btnHtml += `<button class="menu-btn${activeClass}" onclick="window.top.location.href='?cat=${encodeURIComponent(item)}'">${item}</button>`;
+                });
+                menuBox.innerHTML = btnHtml;
+            } else {
+                menuBox.style.display = "none";
+            }
+        })();
+    </script>
+</body>
+</html>

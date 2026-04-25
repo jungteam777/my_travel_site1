@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하누리 여행사 - 미국여행</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        /* [공통 스타일] */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: "Pretendard", sans-serif; 
+            background-color: #fff;
+            overflow-y: auto; 
+            overflow-x: hidden; 
+        }
+
+        /* 각 섹션: 내용물에 따라 높이가 자동 조절됨 */
+        .main-section { 
+            width: 100%; 
+            position: relative; 
+            margin-bottom: 80px; /* 섹션 사이 간격 시원하게 확보 */
+        }
+
+        /* 헤더 고정 해제 (스크롤 시 같이 사라짐) */
+        #header-load { 
+            position: relative; 
+            margin-bottom: 0; /* 헤더 바로 밑에는 간격 없이 메뉴 붙게 설정 */
+        }
+
+        /* 마지막 푸터는 아래 여백 제거 */
+        #footer-load { 
+            margin-bottom: 0; 
+        }
+
+        /* 이미지 비율 깨짐 방지 */
+        img { max-width: 100%; height: auto; display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="header-load" class="main-section"></div>
+    <div id="menu-load" class="main-section"></div>
+    <div id="list-load" class="main-section"></div>
+    <div id="footer-load" class="main-section"></div>
+
+    <script>
+        async function loadComponent(id, filePath) {
+    try {
+        const response = await fetch(filePath);
+        if (!response.ok) throw new Error('파일 없음: ' + filePath);
+        
+        const htmlContent = await response.text();
+        const targetElement = document.getElementById(id);
+        targetElement.innerHTML = htmlContent;
+
+        // 🚀 [핵심] 불러온 HTML 안에 있는 스크립트를 하나하나 다시 만들어서 실행시킴
+        const scripts = targetElement.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement("script");
+            
+            // 모든 속성 복사 (src 포함)
+            Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+
+            // 내부에 적힌 코드 복사
+            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+            
+            // ❗ 기존 스크립트를 지우고 새로 만든 실행 가능한 스ar이 들어간 스크립트로 교체
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    } catch (error) {
+        console.error("로드 에러:", error);
+    }
+}
+
+        // 미국여행 페이지 구성 파일 로드
+        async function initSite() {
+            // 경로 주의: 상위 폴더에 있는 파일은 ../ 로 표시
+            await loadComponent('header-load', '../../header.html');
+            await loadComponent('menu-load', 'america_menu.html');
+            await loadComponent('list-load', 'america_list.html');
+            await loadComponent('footer-load', '../../footer.html');
+        }
+
+        initSite();
+    </script>
+</body>
+</html>

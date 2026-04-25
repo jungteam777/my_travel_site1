@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>하누리 여행사 - 상품상세</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; min-height: 100%; background: #fff; }
+        
+        /* 헤더/푸터 영역 */
+        #header-target, #footer-target { width: 100%; display: block; }
+
+        /* 컨텐츠 영역: 내부 프레임들이 찌그러지지 않게 유연하게 설정 */
+        #content-section { 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+        }
+
+        iframe {
+            width: 100%;
+            border: none;
+            display: block;
+            overflow: hidden;
+        }
+
+        /* 부킹 프레임이 찌그러지지 않도록 최소 높이 설정 */
+        #booking-frame { min-height: 800px; } 
+        #detail-frame { min-height: 500px; }
+    </style>
+</head>
+<body>
+
+    <div id="header-target"></div>
+
+    <div id="content-section">
+        <iframe src="booking.html" id="booking-frame" scrolling="no"></iframe>
+        <iframe src="detail.html" id="detail-frame" scrolling="no"></iframe>
+    </div>
+
+    <div id="footer-target"></div>
+
+    <script>
+        /**
+         * 1. 외부 HTML 로드 및 스크립트 실행 함수
+         * 내 정보 수정 페이지의 검증된 로직을 적용하여 header.html 내의 JS를 활성화합니다.
+         */
+        async function loadComponent(id, filePath) {
+            try {
+                const response = await fetch(filePath);
+                const htmlContent = await response.text();
+                const target = document.getElementById(id);
+                target.innerHTML = htmlContent;
+
+                // 불러온 HTML 내의 script 태그를 찾아 강제로 다시 실행 (중요)
+                const scripts = target.querySelectorAll("script");
+                for (const oldScript of scripts) {
+                    const newScript = document.createElement("script");
+                    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                    newScript.text = oldScript.text;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                }
+                console.log(filePath + " 로드 및 스크립트 활성화 완료");
+            } catch (e) { 
+                console.error("로드 실패:", e); 
+            }
+        }
+
+        /**
+         * 2. 페이지 초기화
+         */
+        window.onload = function() {
+            // 경로 수정: 현재 폴더가 product이므로 상위로 이동
+            loadComponent('header-target', '../header.html');
+            loadComponent('footer-target', '../footer.html');
+
+            const params = new URLSearchParams(window.location.search);
+            const productId = params.get('id');
+            if (productId) {
+                document.getElementById('booking-frame').src = "booking.html?id=" + productId;
+                document.getElementById('detail-frame').src = "detail.html?id=" + productId;
+            }
+        };
+
+        /**
+         * 3. iframe 높이 조절 이벤트 리스너
+         */
+        window.addEventListener('message', function(e) {
+            if (e.data.type === 'SET_HEIGHT') {
+                const df = document.getElementById('detail-frame');
+                if (df) df.style.height = e.data.height + 'px';
+            }
+            if (e.data.type === 'SET_BOOKING_HEIGHT') {
+                const bf = document.getElementById('booking-frame');
+                if (bf) bf.style.height = e.data.height + 'px';
+            }
+        });
+    </script>
+</body>
+</html>

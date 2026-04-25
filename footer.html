@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, sans-serif; letter-spacing: -0.02em; -webkit-font-smoothing: antialiased; }
+
+        .footer-container { background-color: #ffffff; color: #555; font-size: 12px; line-height: 1.5; border-top: 1px solid #f0f0f0; }
+        .footer-inner { max-width: 1200px; margin: 0 auto; padding: 25px 20px; }
+
+        .footer-nav { display: flex; justify-content: flex-start; gap: 25px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f8f8f8; }
+        .footer-nav a { text-decoration: none; color: #333; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
+
+        .footer-main { display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; align-items: start; }
+        .company-name { font-size: 15px; font-weight: 900; color: #111; margin-bottom: 10px; display: block; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(2, auto); justify-content: start; gap: 4px 30px; }
+        .info-item { display: flex; align-items: center; }
+        .info-label { font-weight: 600; color: #999; margin-right: 8px; white-space: nowrap; font-size: 11px; }
+        .info-val { color: #666; font-size: 12px; }
+
+        .security-info { background-color: #f9f9fb; padding: 15px 20px; border-radius: 8px; }
+        .security-box { margin-bottom: 12px; }
+        .security-title { font-size: 12px; font-weight: 800; color: #1a4f94; margin-bottom: 4px; display: block; }
+        .security-desc { font-size: 11px; color: #777; margin: 0; line-height: 1.4; word-break: keep-all; }
+        .link-text { color: #1a4f94; font-size: 11px; font-weight: 800; text-decoration: none; display: inline-block; margin-top: 5px; border-bottom: 1px solid #1a4f94; cursor: pointer; }
+
+        .footer-bottom { margin-top: 25px; padding-top: 15px; border-top: 1px solid #f8f8f8; }
+        .notice-txt { font-size: 10.5px; color: #aaa; margin: 1px 0; line-height: 1.4; word-break: keep-all; }
+        .copyright { margin-top: 10px; font-size: 11px; font-weight: 700; color: #ccc; text-align: center; }
+
+        @media (max-width: 768px) {
+            .footer-main { grid-template-columns: 1fr; gap: 25px; }
+            .info-grid { grid-template-columns: 1fr; gap: 6px; }
+            .info-label { width: 85px; min-width: 85px; }
+        }
+    </style>
+</head>
+<body>
+
+<footer class="footer-container">
+    <div class="footer-inner">
+        <nav class="footer-nav">
+            <a href="#">회사소개</a>
+            <a href="#">개인정보취급방침</a>
+            <a href="#">서비스 이용약관</a>
+            <a href="#">해외여행약관</a>
+        </nav>
+
+        <div class="footer-main">
+            <div class="company-info">
+                <span class="company-name">(주)하누리여행사</span>
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">대표이사</span><span class="info-val">홍길동</span></div>
+                    <div class="info-item"><span class="info-label">TEL</span><span class="info-val">02-1234-5678</span></div>
+                    <div class="info-item" style="grid-column: span 1;"><span class="info-label">주소</span><span class="info-val">서울특별시 서초구 어딘가 123</span></div>
+                    <div class="info-item"><span class="info-label">사업자번호</span><span class="info-val">123-45-67890</span></div>
+                    <div class="info-item"><span class="info-label">통신판매업</span><span class="info-val">제 2026-서울서초-0123호</span></div>
+                    <div class="info-item"><span class="info-label">개인정보책임자</span><span class="info-val">김철수</span></div>
+                </div>
+            </div>
+
+            <div class="security-info">
+                <div class="security-box">
+                    <span class="security-title">우리은행 채무지급보증</span>
+                    <p class="security-desc">현금 결제 시 우리은행 보증으로 안전거래를 보장합니다.</p>
+                    <a class="link-text">가입사실 확인 ></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="notice-txt">※ 여행일정 변경 시 여행자의 사전 동의를 받습니다.</p>
+            <p class="notice-txt">※ (주)하누리여행사는 통신판매중개자이며, 거래 책임은 판매자에게 있습니다.</p>
+            <div class="copyright">Copyright © 2026 HANURI TRAVEL. All Rights Reserved.</div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

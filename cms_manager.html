@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>CMS 관리자</title>
+    <style>
+        /* 1. 레이아웃: 화면 꽉 차게 고정 */
+        body { font-family: 'Noto Sans KR', sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f4f7; overflow: hidden; }
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid #d0d7dd; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-title { padding: 25px 20px; font-size: 16px; font-weight: bold; color: #116dff; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f4f7; }
+        .add-collection-btn { cursor: pointer; font-size: 18px; color: #116dff; border: none; background: none; }
+        .menu-item { padding: 12px 20px; cursor: pointer; color: #333; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .menu-item:hover { background: #f8f9fa; }
+        .menu-item.active { background: #eaf5ff; color: #116dff; font-weight: bold; border-right: 3px solid #116dff; }
+
+        /* 2. 메인 컨테이너 */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .header { padding: 15px 30px; background: white; border-bottom: 1px solid #d0d7dd; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .toolbar { padding: 12px 30px; background: #ffffff; border-bottom: 1px solid #d0d7dd; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .btn { padding: 8px 16px; border-radius: 4px; border: 1px solid #d0d7dd; background: white; cursor: pointer; font-size: 13px; font-weight: 500; }
+        .btn-add { color: #116dff; border: 1px solid #116dff; }
+        .btn-field { color: #6200ee; border: 1px solid #6200ee; } 
+        .btn-delete { color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .search-box { margin-left: auto; padding: 7px 12px; border: 1px solid #d0d7dd; border-radius: 4px; width: 250px; font-size: 13px; outline: none; }
+
+        /* 3. 그리드 핵심 */
+        .grid-area { flex: 1; overflow: auto; background: #fff; position: relative; }
+        .cms-table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .cms-table tr { display: flex; width: max-content; min-width: 100%; }
+        .cms-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 10; padding: 12px; border: 1px solid #d0d7dd; font-size: 12px; color: #778; text-align: left; position: relative; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; display: block; flex-shrink: 0; }
+        .cms-table td { padding: 10px; border: 1px solid #d0d7dd; font-size: 13px; color: #334; height: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; display: block; flex-shrink: 0; word-break: break-all; outline: none; }
+
+        .cms-table td.cell-selected {
+            background-color: #eaf5ff !important;
+            box-shadow: inset 0 0 0 2px #116dff !important;
+            z-index: 5;
+        }
+
+        th.dragging { opacity: 0.5; background: #eaf5ff; }
+        th.drag-over { border-left: 3px solid #116dff !important; }
+        .selected td { background: #f0f8ff !important; }
+
+        .col-num { width: 60px; text-align: center; font-weight: bold; background: #f8f9fa !important; position: sticky !important; left: 0; z-index: 20 !important; border-right: 2px solid #d0d7dd !important; }
+        .col-check { width: 40px; background: #f8f9fa !important; position: sticky !important; left: 60px; z-index: 20 !important; border-right: 1px solid #d0d7dd !important; display: flex !important; align-items: center; justify-content: center; overflow: hidden; font-size: 0; }
+        .col-check input { margin: 0 !important; padding: 0 !important; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+        .resizer { position: absolute; right: 0; top: 0; width: 7px; height: 100%; cursor: col-resize; z-index: 20; }
+        .resizer:hover { background: #116dff; opacity: 0.5; }
+        .del-field-btn { display: inline-block; margin-left: 5px; cursor: pointer; color: #ccc; font-weight: bold; font-size: 14px; }
+        .del-field-btn:hover { color: #ff4d4f; }
+
+        .grid-area::-webkit-scrollbar { height: 12px; width: 12px; }
+        .grid-area::-webkit-scrollbar-track { background: #f1f1f1; }
+        .grid-area::-webkit-scrollbar-thumb { background: #116dff; border-radius: 10px; }
+        .grid-area::-webkit-scrollbar-thumb:hover { background: #0056d2; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-title">
+            <span>📂 콘텐츠 관리자</span>
+            <button class="add-collection-btn" onclick="createNewCollection()" title="새 컬렉션 추가">+</button>
+        </div>
+        <div id="menuList"></div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h2 id="currentTitle" style="font-size:18px; margin:0;">컬렉션을 선택하세요</h2>
+            <button class="btn" style="background:#116dff; color:white; border:none;" onclick="saveToServer()">변경사항 게시</button>
+        </div>
+        
+        <div class="toolbar">
+            <button class="btn btn-add" onclick="addNewRow()">+ 아이템 추가</button>
+            <button class="btn btn-field" onclick="addNewField()">+ 필드 추가</button> 
+            <button class="btn btn-delete" onmousedown="event.preventDefault()" onclick="deleteItems()">선택 삭제</button>
+            <span style="font-size:12px; color:#99a; margin-left:10px;">전체: <span id="count">0</span></span>
+            <input type="text" class="search-box" id="searchInput" placeholder="검색어를 입력하세요..." onkeyup="filterTable()">
+        </div>
+
+        <div class="grid-area">
+            <table class="cms-table" id="cmsTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th class="col-num">#</th>
+                        <th class="col-check"><input type="checkbox" id="checkAll"></th>
+                    </tr>
+                </thead>
+                <tbody id="gridBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = 'products.json';
+        const fieldNames = ["메인사진", "카테고리", "지역", "상품코드", "상품명", "일정", "기본설명", "성인요금", "아동요금", "상품설명", "여행일정", "포함사항", "불포함사항", "참고사항", "상품이미지"];
+
+        window.onload = async () => {
+            await refreshMenuList(); 
+            loadData(currentFile);
+            initColumnDrag();
+            initCellMultiSelect();
+            initKeyboardNavigation();
+            initPasteEvent();
+        };
+
+        // [수정] 서버에서 한글 이름(displayName)과 파일명(filename)을 받아와서 메뉴 생성
+        async function refreshMenuList() {
+            try {
+                const res = await fetch('/list-collections');
+                const collections = await res.json(); // [{filename, displayName}, ...]
+                const menuList = document.getElementById('menuList');
+                
+                menuList.innerHTML = '';
+
+                collections.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (item.filename === currentFile ? ' active' : '');
+                    // 한글 이름을 클릭 시 switchCollection에 영문 파일명 전달
+                    div.onclick = function() { switchCollection(this, item.filename); };
+                    div.innerHTML = `📁 ${item.displayName}`;
+                    menuList.appendChild(div);
+                });
+            } catch (e) {
+                console.error("메뉴 로드 실패:", e);
+            }
+        }
+
+        // [수정] 새 컬렉션 추가 시 displayName을 함께 서버로 전송
+        async function createNewCollection() {
+            const displayName = prompt("관리자 메뉴에 표시할 이름을 입력하세요 (예: 공지사항):");
+            if (!displayName) return;
+
+            const fileName = prompt("실제 생성할 파일명을 영어로 입력하세요 (확장자 제외, 예: notice):");
+            if (!fileName) return;
+
+            const fullFileName = fileName.toLowerCase().replace(/\s/g, '_') + '.json';
+
+            try {
+                const response = await fetch('/save-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // [변경] displayName 필드를 추가하여 서버에 보냄
+                    body: JSON.stringify({ filename: fullFileName, data: [], displayName: displayName })
+                });
+
+                if (response.ok) {
+                    currentFile = fullFileName;
+                    await refreshMenuList(); // 메뉴 새로고침 (이제 한글로 뜸)
+                    loadData(fullFileName);
+                    alert(`✅ '${displayName}' 컬렉션이 생성되었습니다!`);
+                } else {
+                    alert("❌ 파일 생성 실패");
+                }
+            } catch (e) {
+                alert("❌ 서버 연결 오류");
+            }
+        }
+
+        function initKeyboardNavigation() {
+            document.addEventListener('keydown', function(e) {
+                const active = document.activeElement;
+                const isTd = active.tagName === 'TD' && active.getAttribute('contenteditable') === 'true';
+                const selectedCells = document.querySelectorAll('.cell-selected');
+
+                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.length > 0) {
+                    if (isTd && (active.innerText.length > 0)) {
+                        return; 
+                    }
+                    e.preventDefault();
+                    selectedCells.forEach(td => {
+                        if (td.getAttribute('contenteditable') === 'true') td.innerText = "";
+                    });
+                    return;
+                }
+
+                if (!isTd) return;
+
+                const tr = active.parentElement;
+                const colIdx = Array.from(tr.children).indexOf(active);
+                let target = null;
+
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    target = e.shiftKey ? active.previousElementSibling : active.nextElementSibling;
+                    if (target && (target.classList.contains('col-num') || target.classList.contains('col-check'))) target = null;
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const nextTr = tr.nextElementSibling;
+                    if (nextTr) target = nextTr.children[colIdx];
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextTr = tr.nextElementSibling;
+                    if (nextTr) target = nextTr.children[colIdx];
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevTr = tr.previousElementSibling;
+                    if (prevTr) target = prevTr.children[colIdx];
+                } else if (e.key === 'ArrowRight' && (window.getSelection().anchorOffset === active.innerText.length || active.innerText.length === 0)) {
+                    target = active.nextElementSibling;
+                } else if (e.key === 'ArrowLeft' && window.getSelection().anchorOffset === 0) {
+                    target = active.previousElementSibling;
+                    if (target && (target.classList.contains('col-num') || target.classList.contains('col-check'))) target = null;
+                }
+
+                if (target && target.tagName === 'TD' && target.getAttribute('contenteditable') === 'true') {
+                    target.focus();
+                    setTimeout(() => document.execCommand('selectAll', false, null), 0);
+                }
+            });
+        }
+
+        function initPasteEvent() {
+            document.getElementById('gridBody').addEventListener('paste', function (e) {
+                e.preventDefault();
+                const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                const rows = text.split(/\r?\n(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const target = e.target.closest('td');
+                if (!target || target.getAttribute('contenteditable') !== 'true') return;
+
+                const currentRow = target.parentElement;
+                const startColIdx = Array.from(currentRow.children).indexOf(target);
+                const tbody = currentRow.parentElement;
+                const allRows = Array.from(tbody.children);
+                const startRowIdx = allRows.indexOf(currentRow);
+
+                rows.forEach((row, rIdx) => {
+                    if (!row.trim()) return;
+                    const cells = row.split(/\t(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    const targetTr = allRows[startRowIdx + rIdx];
+                    if (targetTr) {
+                        cells.forEach((cellData, cIdx) => {
+                            const targetTd = targetTr.children[startColIdx + cIdx];
+                            if (targetTd && targetTd.getAttribute('contenteditable') === 'true') {
+                                let cleanData = cellData.trim();
+                                if (cleanData.startsWith('"') && cleanData.endsWith('"')) { cleanData = cleanData.slice(1, -1); }
+                                cleanData = cleanData.replace(/""/g, '"');
+                                targetTd.innerText = cleanData;
+                            }
+                        });
+                    }
+                });
+            });
+        }
+
+        async function loadData(filename) {
+            try {
+                const res = await fetch(`json/${filename}?v=${Date.now()}`);
+                let data = [];
+                if(res.ok) { data = await res.json(); }
+                let headers = (data.length > 0) ? Object.keys(data[0]) : [...fieldNames];
+                const savedOrder = JSON.parse(localStorage.getItem(`order_${filename}`));
+                const savedWidths = JSON.parse(localStorage.getItem(`widths_${filename}`)) || {};
+                if (savedOrder) headers = savedOrder;
+                const headerRow = document.getElementById('headerRow');
+                headerRow.innerHTML = `<th class="col-num">#</th><th class="col-check"><input type="checkbox" id="checkAll"></th>`;
+                initCheckAll();
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.style.width = savedWidths[h] || ((h === "상품명" || h === "상품설명") ? "300px" : "120px");
+                    th.innerHTML = `${h}<span class="del-field-btn" onclick="deleteField(this)">×</span><div class="resizer"></div>`;
+                    headerRow.appendChild(th);
+                });
+                const body = document.getElementById('gridBody');
+                body.innerHTML = ""; 
+                if (data.length > 0) {
+                    data.forEach((item, i) => {
+                        const sortedCols = headers.map(h => item[h] || "");
+                        addRowToTable(sortedCols, i + 1);
+                    });
+                } else { addNewRow(); }
+                updateUI();
+            } catch(e) { setupDefaultTable(); updateUI(); }
+        }
+
+        function setupDefaultTable() {
+            const headerRow = document.getElementById('headerRow');
+            headerRow.innerHTML = `<th class="col-num">#</th><th class="col-check"><input type="checkbox" id="checkAll"></th>`;
+            fieldNames.forEach(h => {
+                const th = document.createElement('th');
+                th.style.width = (h === "상품명" || h === "상품설명") ? "300px" : "120px";
+                th.innerHTML = `${h}<span class="del-field-btn" onclick="deleteField(this)">×</span><div class="resizer"></div>`;
+                headerRow.appendChild(th);
+            });
+            addNewRow();
+        }
+
+        async function saveToServer() {
+            const headerThs = document.querySelectorAll('#headerRow th');
+            const headerNames = Array.from(headerThs).slice(2).map(th => th.innerText.replace('×', '').trim());
+            const rows = document.querySelectorAll('#gridBody tr');
+            const tableData = [];
+            rows.forEach(row => {
+                if (row.style.display === "none") return;
+                const rowObject = {};
+                const cells = Array.from(row.cells).slice(2);
+                cells.forEach((cell, idx) => {
+                    const fieldName = headerNames[idx];
+                    if (fieldName) rowObject[fieldName] = cell.innerText.trim();
+                });
+                tableData.push(rowObject);
+            });
+            try {
+                const response = await fetch('/save-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: currentFile, data: tableData })
+                });
+                if (response.ok) alert("✅ 성공적으로 게시되었습니다!");
+                else alert('❌ 저장 실패');
+            } catch (e) { alert('❌ 서버 연결 확인'); }
+        }
+
+        function addRowToTable(cols, num) {
+            const body = document.getElementById('gridBody');
+            const tr = document.createElement('tr');
+            const headerThs = document.querySelectorAll('#headerRow th');
+            const headerCount = headerThs.length - 2;
+            let html = `<td class="col-num">${num}</td><td class="col-check"><input type="checkbox" class="row-check"></td>`;
+            for(let i=0; i<headerCount; i++) {
+                let text = (cols[i] !== undefined && cols[i] !== null) ? String(cols[i]) : "";
+                text = text.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+                const currentTh = headerThs[i+2];
+                const widthPx = currentTh ? currentTh.style.width : '120px';
+                html += `<td contenteditable="true" style="width:${widthPx}; min-width:${widthPx}; max-width:${widthPx};" onmousedown="if(event.button === 0 && !this.classList.contains('cell-selected')) { setTimeout(() => document.execCommand('selectAll', false, null), 0); }">${text}</td>`;
+            }
+            tr.innerHTML = html;
+            body.appendChild(tr);
+        }
+
+        function initCellMultiSelect() {
+            let isSelecting = false;
+            let startCell = null;
+            const gridBody = document.getElementById('gridBody');
+
+            gridBody.addEventListener('mousedown', (e) => {
+                if (e.button === 2) return; 
+                const td = e.target.closest('td');
+                if (!td || td.classList.contains('col-num') || td.classList.contains('col-check')) return;
+                
+                isSelecting = true;
+                startCell = td;
+                
+                if (!e.ctrlKey && !e.shiftKey) {
+                    document.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+                }
+                td.classList.add('cell-selected');
+            });
+
+            gridBody.addEventListener('mouseover', (e) => {
+                if (!isSelecting || !startCell) return;
+                const currentCell = e.target.closest('td');
+                if (!currentCell || currentCell.classList.contains('col-num') || currentCell.classList.contains('col-check')) return;
+                
+                const allRows = Array.from(gridBody.children);
+                const startRowIdx = allRows.indexOf(startCell.parentElement);
+                const endRowIdx = allRows.indexOf(currentCell.parentElement);
+                const startColIdx = Array.from(startCell.parentElement.children).indexOf(startCell);
+                const endColIdx = Array.from(currentCell.parentElement.children).indexOf(currentCell);
+
+                const rowMin = Math.min(startRowIdx, endRowIdx), rowMax = Math.max(startRowIdx, endRowIdx);
+                const colMin = Math.min(startColIdx, endColIdx), colMax = Math.max(startColIdx, endColIdx);
+
+                document.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+                for (let r = rowMin; r <= rowMax; r++) {
+                    for (let c = colMin; c <= colMax; c++) {
+                        const cell = allRows[r].children[c];
+                        if (cell && !cell.classList.contains('col-num') && !cell.classList.contains('col-check')) {
+                            cell.classList.add('cell-selected');
+                        }
+                    }
+                }
+            });
+
+            window.addEventListener('mouseup', () => { isSelecting = false; });
+        }
+
+        function addNewField() {
+            const fieldName = prompt("추가할 필드 이름을 입력하세요:", "새 필드");
+            if (!fieldName) return;
+            const headerRow = document.getElementById('headerRow');
+            const th = document.createElement('th');
+            th.style.width = "150px"; th.innerHTML = `${fieldName}<span class="del-field-btn" onclick="deleteField(this)">×</span><div class="resizer"></div>`;
+            headerRow.appendChild(th);
+            document.querySelectorAll('#gridBody tr').forEach(row => {
+                const td = document.createElement('td'); td.setAttribute('contenteditable', 'true');
+                td.style.width = "150px"; td.style.minWidth = "150px"; td.style.maxWidth = "150px"; row.appendChild(td);
+            });
+            updateUI(); initColumnDrag();
+        }
+
+        function deleteField(btnEl) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            const th = btnEl.parentElement; const colIndex = Array.from(th.parentElement.children).indexOf(th);
+            th.remove(); document.querySelectorAll('#gridBody tr').forEach(row => { if(row.cells[colIndex]) row.cells[colIndex].remove(); });
+            updateUI();
+        }
+
+        function filterTable() {
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('#gridBody tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none"; });
+        }
+
+        function addNewRow() {
+            const count = document.querySelectorAll('#gridBody tr').length + 1;
+            const headerCount = document.querySelectorAll('#headerRow th').length - 2;
+            addRowToTable(new Array(headerCount).fill(""), count); updateUI();
+        }
+
+        function deleteItems() {
+            const targetRows = new Set();
+            document.querySelectorAll('.cell-selected').forEach(td => {
+                const tr = td.closest('tr');
+                if (tr) targetRows.add(tr);
+            });
+            document.querySelectorAll('.row-check:checked').forEach(cb => {
+                const tr = cb.closest('tr');
+                if (tr) targetRows.add(tr);
+            });
+            if (targetRows.size === 0) {
+                alert('삭제할 행의 셀을 드래그하여 선택하거나 체크박스를 체크해주세요.');
+                return;
+            }
+            if (confirm(`선택한 ${targetRows.size}개의 행을 삭제하시겠습니까?`)) {
+                targetRows.forEach(tr => tr.remove());
+                renumber(); 
+                updateUI();
+                const checkAll = document.getElementById('checkAll');
+                if (checkAll) checkAll.checked = false;
+                document.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+                alert('삭제되었습니다.');
+            }
+        }
+
+        function renumber() { document.querySelectorAll('#gridBody tr').forEach((r, i) => r.querySelector('.col-num').innerText = i + 1); }
+        function updateUI() { document.getElementById('count').innerText = document.querySelectorAll('#gridBody tr').length; initResizers(); }
+        
+        function initResizers() {
+            document.querySelectorAll('.resizer').forEach(rs => {
+                rs.onmousedown = function(e) {
+                    e.stopPropagation();
+                    const th = rs.parentElement; const startX = e.pageX; const startWidth = th.offsetWidth;
+                    const colIndex = Array.from(th.parentElement.children).indexOf(th);
+                    const onMouseMove = (e) => {
+                        const newWidth = startWidth + (e.pageX - startX);
+                        if (newWidth > 30) {
+                            const widthPx = newWidth + 'px';
+                            th.style.width = widthPx; th.style.minWidth = widthPx; th.style.maxWidth = widthPx;
+                            document.querySelectorAll(`#gridBody tr`).forEach(row => {
+                                const td = row.cells[colIndex]; if(td) { td.style.width = widthPx; td.style.minWidth = widthPx; td.style.maxWidth = widthPx; }
+                            });
+                        }
+                    };
+                    const onMouseUp = () => {
+                        const widths = {};
+                        document.querySelectorAll('#headerRow th').forEach((th, idx) => { if(idx >= 2) widths[th.innerText.replace('×', '').trim()] = th.style.width; });
+                        localStorage.setItem(`widths_${currentFile}`, JSON.stringify(widths));
+                        document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp);
+                    };
+                    document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
+                };
+            });
+        }
+
+        function switchCollection(el, filename) {
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            el.classList.add('active'); currentFile = filename;
+            // [수정] 메뉴에 적힌 텍스트(한글)를 메인 타이틀에 표시
+            document.getElementById('currentTitle').innerText = el.innerText.replace('📁 ', '') + " 컬렉션";
+            loadData(filename);
+        }
+
+        function initColumnDrag() {
+            let dragSrcEl = null; const headerRow = document.getElementById('headerRow');
+            headerRow.addEventListener('mousedown', (e) => {
+                const th = e.target.closest('th');
+                if (th && !e.target.classList.contains('resizer') && !th.classList.contains('col-num') && !th.classList.contains('col-check')) th.setAttribute('draggable', 'true');
+            });
+            headerRow.addEventListener('dragstart', (e) => {
+                dragSrcEl = e.target; dragSrcEl.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            headerRow.addEventListener('dragover', (e) => { e.preventDefault(); const target = e.target.closest('th'); if(target && target !== dragSrcEl) target.classList.add('drag-over'); });
+            headerRow.addEventListener('dragleave', (e) => { const target = e.target.closest('th'); if(target) target.classList.remove('drag-over'); });
+            headerRow.addEventListener('drop', (e) => {
+                const target = e.target.closest('th');
+                if (target && target !== dragSrcEl) {
+                    const fromIdx = Array.from(dragSrcEl.parentElement.children).indexOf(dragSrcEl);
+                    const toIdx = Array.from(target.parentElement.children).indexOf(target);
+                    document.querySelectorAll('.cms-table tr').forEach(row => {
+                        const cells = Array.from(row.children);
+                        if (fromIdx < toIdx) row.insertBefore(cells[fromIdx], cells[toIdx].nextSibling);
+                        else row.insertBefore(cells[fromIdx], cells[toIdx]);
+                    });
+                }
+            });
+            headerRow.addEventListener('dragend', () => { document.querySelectorAll('#headerRow th').forEach(el => { el.classList.remove('dragging', 'drag-over'); el.setAttribute('draggable', 'false'); }); });
+        }
+
+        function initCheckAll() {
+            const checkAll = document.getElementById('checkAll');
+            if (!checkAll) return;
+            checkAll.onclick = function() {
+                const isChecked = this.checked;
+                document.querySelectorAll('.row-check').forEach(cb => {
+                    cb.checked = isChecked;
+                    const tr = cb.closest('tr');
+                    if (tr) isChecked ? tr.classList.add('selected') : tr.classList.remove('selected');
+                });
+            };
+        }
+    </script>
+</body>
+</html>

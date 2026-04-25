@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하누리 여행사 - 내 정보 수정</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-text-size-adjust: none;
+        }
+
+        .terms-wrapper {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1 { font-size: 26px; font-weight: 800; color: #1a4f94; text-align: center; margin-bottom: 40px; }
+        
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        
+        .input-row { display: flex; gap: 8px; }
+        .input-row input { flex: 1; }
+        
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 10px;
+            font-size: 15px; box-sizing: border-box; font-family: 'Pretendard';
+            transition: all 0.2s;
+        }
+        .form-group input:focus { outline: 2px solid #1a4f94; border-color: transparent; }
+        .form-group input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #94a3b8; }
+
+        .check-btn {
+            padding: 0 15px; background: #f1f5f9; color: #1a4f94; border: 1px solid #1a4f94;
+            border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+            white-space: nowrap; transition: 0.2s;
+        }
+        .check-btn:hover { background: #1a4f94; color: #fff; }
+
+        .status-msg { font-size: 12px; margin-top: 5px; font-weight: 500; display: none; }
+        .status-msg.success { color: #10b981; display: block; }
+        .status-msg.error { color: #ef4444; display: block; }
+
+        .submit-btn {
+            width: 100%; padding: 18px;
+            background-color: #1a4f94; color: #fff;
+            border: none; border-radius: 12px;
+            font-size: 18px; font-weight: 700;
+            cursor: pointer; transition: 0.3s;
+            margin-top: 20px;
+        }
+        .submit-btn:hover { background-color: #133a6d; }
+
+        #customModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #fff; padding: 30px; border-radius: 20px;
+            width: 90%; max-width: 320px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-msg { font-size: 16px; color: #334155; margin-bottom: 25px; line-height: 1.5; font-weight: 600; }
+        .modal-close {
+            background: #1a4f94; color: #fff; border: none; padding: 12px 30px;
+            border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        @media screen and (max-width: 480px) {
+            .terms-wrapper { padding: 25px 20px; border-radius: 15px; margin: 20px auto; }
+            h1 { font-size: 20px; margin-bottom: 25px; }
+            .submit-btn { padding: 15px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div id="customModal">
+    <div class="modal-content">
+        <div class="modal-msg" id="modalMsg">메시지 내용</div>
+        <button class="modal-close" onclick="closeModal()">확인</button>
+    </div>
+</div>
+
+<div class="terms-wrapper">
+    <h1 id="mainTitle">내 정보 수정</h1>
+
+    <div id="step2" class="step-section">
+        <div class="form-group">
+            <label>아이디 (변경 불가)</label>
+            <input type="text" id="userId" disabled>
+        </div>
+        <div class="form-group">
+            <label>새 비밀번호</label>
+            <input type="password" id="userPw" placeholder="변경할 비밀번호를 입력해주세요">
+        </div>
+        <div class="form-group">
+            <label>이름</label>
+            <input type="text" id="userName" placeholder="실명을 입력해주세요">
+        </div>
+        <div class="form-group">
+            <label>닉네임</label>
+            <div class="input-row">
+                <input type="text" id="userNick" placeholder="닉네임 입력" oninput="resetCheck('Nick')">
+                <button class="check-btn" onclick="checkDup('Nick')">중복확인</button>
+            </div>
+            <div id="msgNick" class="status-msg"></div>
+        </div>
+        <div class="form-group">
+            <label>이메일</label>
+            <input type="email" id="userEmail" placeholder="example@email.com">
+        </div>
+        <div class="form-group">
+            <label>휴대폰</label>
+            <input type="tel" id="userPhone" placeholder="010-0000-0000">
+        </div>
+        <div class="form-group">
+            <label>생년월일</label>
+            <input type="date" id="userBirth">
+        </div>
+        <div class="form-group">
+            <label>지역</label>
+            <select id="userRegion">
+                <option value="">지역을 선택해주세요</option>
+                <option value="서울">서울</option>
+                <option value="경기">경기</option>
+                <option value="인천">인천</option>
+                <option value="강원">강원</option>
+                <option value="충청">충청</option>
+                <option value="전라">전라</option>
+                <option value="경상">경상</option>
+                <option value="제주">제주</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>상세주소</label>
+            <input type="text" id="userAddr" placeholder="나머지 주소를 입력해주세요">
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="updateInfo()">정보 수정 완료</button>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    // 외부 HTML 로드
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    let isNickChecked = true; // 기존 닉네임이므로 초기값 true
+    let originalNick = "";
+
+    // 1. 페이지 로드 시 기존 정보 채워넣기
+    function initUserInfo() {
+        const userData = JSON.parse(localStorage.getItem('loggedInUser'));
+        
+        if (!userData) {
+            alert("로그인이 필요한 서비스입니다.");
+            location.href = '../header/login.html';
+            return;
+        }
+
+        // HTML ID와 데이터 키 매핑 (이름 필드는 "이름"으로 설정)
+        document.getElementById('userId').value = userData["아이디"] || "";
+        document.getElementById('userName').value = userData["이름"] || "";
+        document.getElementById('userNick').value = userData["닉네임"] || "";
+        document.getElementById('userEmail').value = userData["이메일"] || "";
+        document.getElementById('userPhone').value = userData["휴대폰"] || "";
+        document.getElementById('userBirth').value = userData["생년월일"] || "";
+        document.getElementById('userRegion').value = userData["지역"] || "";
+        document.getElementById('userAddr').value = userData["주소"] || "";
+        
+        originalNick = userData["닉네임"];
+    }
+
+    function openModal(msg) {
+        document.getElementById('modalMsg').innerText = msg;
+        document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+
+    // 닉네임 중복 체크
+    async function checkDup(type) {
+        const val = document.getElementById('userNick').value.trim();
+        if (val === originalNick) {
+            openModal("현재 사용 중인 닉네임입니다.");
+            isNickChecked = true;
+            return;
+        }
+        
+        try {
+            const response = await fetch('../json/members.json');
+            const users = await response.json();
+            const isExist = users.some(u => u["닉네임"] === val);
+
+            const msgEl = document.getElementById('msgNick');
+            msgEl.style.display = 'block';
+
+            if (isExist) {
+                msgEl.innerText = "이미 사용 중인 닉네임입니다.";
+                msgEl.className = 'status-msg error';
+                isNickChecked = false;
+            } else {
+                msgEl.innerText = "사용 가능한 닉네임입니다.";
+                msgEl.className = 'status-msg success';
+                isNickChecked = true;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function resetCheck(type) {
+        isNickChecked = false;
+        const msgEl = document.getElementById('msgNick');
+        msgEl.style.display = 'none';
+    }
+
+    // 2. 정보 수정 요청 (서버 통신)
+    async function updateInfo() {
+        if (!isNickChecked) {
+            openModal("닉네임 중복 확인을 완료해주세요.");
+            return;
+        }
+
+        const fieldMap = {
+            userId: "아이디", userPw: "비밀번호", userName: "이름", 
+            userNick: "닉네임", userEmail: "이메일", userPhone: "휴대폰", 
+            userBirth: "생년월일", userRegion: "지역", userAddr: "주소"
+        };
+
+        const formData = {};
+        for (let id in fieldMap) {
+            const val = document.getElementById(id).value.trim();
+            // 비밀번호는 비어있으면 기존 비밀번호 유지(서버 로직에 따라 다름)
+            if (!val && id !== 'userPw') { 
+                openModal(`${fieldMap[id]}을(를) 입력해주세요.`); 
+                return; 
+            }
+            formData[fieldMap[id]] = val;
+        }
+
+        try {
+            // 실제 서버 API 경로에 맞춰 수정 필요 (예: /update-profile)
+            const response = await fetch('/update-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                // 브라우저 창고 정보도 갱신
+                localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                alert("회원 정보가 수정되었습니다.");
+                location.reload(); 
+            } else {
+                alert("정보 수정에 실패했습니다.");
+            }
+        } catch (err) {
+            alert("서버 연결에 실패했습니다.");
+        }
+    }
+
+    window.addEventListener('load', () => {
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+        initUserInfo(); // 정보 채우기 실행
+    });
+</script>
+
+</body>
+</html>

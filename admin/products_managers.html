@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>상품 관리 시스템 (로컬 호환용)</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        /* [디자인 유지] 기존 스타일 시트와 동일 */
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --label-bg: #e7f3ff;
+            --text-main: #1a1c23;
+            --text-sub: #6b7280;
+            --primary-blue: #3b82f6;
+            --border-color: #d1d5db;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            word-break: keep-all;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px; }
+        .header-btns { display: flex; gap: 10px; }
+
+        .btn {
+            padding: 10px 20px; border-radius: 8px; font-size: 14px;
+            font-weight: 600; cursor: pointer; border: none; transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-list { background-color: #72dafe; color: #fff; }
+        .btn-save { background-color: #3b82f6; color: #fff; }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        .section-title {
+            font-size: 16px; font-weight: 700; color: #3b82f6;
+            margin: 30px 0 15px 0; padding-left: 5px;
+        }
+        .form-card { background: var(--card-bg); border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        .form-row { display: flex; border-bottom: 1px solid #eee; }
+        .form-row:last-child { border-bottom: none; }
+
+        .label {
+            width: 160px; background-color: var(--label-bg); padding: 15px 20px;
+            display: flex; align-items: center; justify-content: flex-end;
+            font-size: 14px; font-weight: 600; color: #333; border-right: 1px solid #d1d5db;
+            flex-shrink: 0;
+        }
+
+        .input-data { flex: 1; padding: 12px 20px; display: flex; align-items: center; gap: 15px; min-width: 0; }
+        input[type="text"], input[type="number"], select {
+            width: 100%; height: 40px; border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 0 12px; font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .input-short { max-width: 400px; }
+        .preview-img { width: 60px; height: 60px; border-radius: 4px; border: 1px solid #ddd; object-fit: cover; display: none; flex-shrink: 0; }
+        .btn-select-file { background-color: #3b82f6; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+        .btn-del-file { background-color: #ff4d4f; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; display: none; }
+        .upload-status { font-size: 12px; color: #3b82f6; display: none; font-weight: bold; }
+
+        .editor-container { width: 100%; border: 1px solid #d1d5db; background: #fff; position: relative; box-sizing: border-box; }
+        .editor-toolbar { background: #f8f9fa; border-bottom: 1px solid #d1d5db; padding: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .editor-toolbar select { width: auto; height: 32px; padding: 0 5px; font-size: 13px; border: 1px solid #ddd; }
+        .editor-toolbar button { padding: 4px 10px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; min-width: 32px; height: 32px; }
+        .editor-toolbar button:hover { background: #f0f0f0; }
+        
+        .editor-content { 
+            height: 300px; padding: 15px; font-family: 'Pretendard', sans-serif;
+            font-size: 15px; line-height: 1.6; outline: none; overflow-y: auto; 
+            background: #fff; box-sizing: border-box;
+        }
+        .editor-content:empty:before { content: '내용을 입력하세요...'; color: #999; }
+        .editor-content img { max-width: 100%; height: auto; margin: 10px 0; display: block; cursor: pointer; }
+
+        #resizer-handler { position: absolute; border: 2px solid #3b82f6; display: none; pointer-events: none; z-index: 100; }
+        .resizer-dot { width: 14px; height: 14px; background: white; border: 2px solid #3b82f6; position: absolute; pointer-events: auto; cursor: nwse-resize; }
+
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; }
+            .form-row { flex-direction: column; }
+            .label { width: 100%; justify-content: flex-start; border-right: none; border-bottom: 1px solid #eee; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="page-header">
+        <div id="pageTitle" style="font-size: 20px; font-weight: 800; color:#333;">상품 등록</div>
+        <div class="header-btns">
+            <button class="btn btn-list" onclick="location.reload()">새로고침</button>
+            <button id="topSaveBtn" class="btn btn-save" onclick="handleFinalSave()">등록하기</button>
+        </div>
+    </div>
+
+    <div class="section-title">기본정보</div>
+    <div class="form-card">
+        <div class="form-row">
+            <div class="label">상품코드</div>
+            <div class="input-data"><input type="text" id="productCode" class="input-short" readonly style="background:#f5f5f5;"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">1차 분류</div>
+            <div class="input-data">
+                <select id="mainCat" class="input-short" onchange="updateSubCat()">
+                    <option value="">선택하세요</option>
+                    <option>미국여행</option><option>캐나다/중남미</option><option>유럽/아프리카</option>
+                    <option>국내여행</option><option>아시아/동남아</option><option>호캉스</option><option>특가할인상품</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="label">2차 분류</div>
+            <div class="input-data">
+                <select id="subCat" class="input-short"><option value="">1차 분류를 먼저 선택하세요</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="label">상품명</div>
+            <div class="input-data"><input type="text" id="productName"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">기본설명</div>
+            <div class="input-data"><input type="text" id="basicDescription"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">여행기간</div>
+            <div class="input-data"><input type="text" id="duration" class="input-short"></div>
+        </div>
+    </div>
+
+    <div class="section-title">가격 정보</div>
+    <div class="form-card">
+        <div class="form-row">
+            <div class="label">성인가격</div>
+            <div class="input-data"><input type="number" id="adultPrice" class="input-short" value="0"></div>
+        </div>
+        <div class="form-row">
+            <div class="label">아동가격</div>
+            <div class="input-data"><input type="number" id="childPrice" class="input-short" value="0"></div>
+        </div>
+    </div>
+
+    <div class="section-title">이미지 (최대 10개)</div>
+    <div class="form-card" id="imageSection"></div>
+
+    <div class="section-title">상세설명설정</div>
+    <div class="form-card" id="editorSection"></div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <button id="bottomSaveBtn" class="btn btn-save" style="padding: 15px 60px; font-size: 16px; width: auto;" onclick="handleFinalSave()">최종 저장 및 등록</button>
+    </div>
+</div>
+
+<div id="resizer-handler"><div class="resizer-dot" style="right:-7px; bottom:-7px;"></div></div>
+
+<script src="../js/product-api.js"></script>
+
+<script>
+    const categoryData = {
+        "미국여행": ["미서부", "미동부", "하와이", "옐로스톤/러쉬모어/알래스카"],
+        "캐나다/중남미": ["중남미", "캐나다"],
+        "유럽/아프리카": ["서유럽", "동유럽/발칸", "지중해"],
+        "국내여행": ["일일투어", "섬투어"],
+        "아시아/동남아": ["일본/중국", "싱가포르/말레이시아/태국", "파타야", "베트남", "푸켓/크라비"],
+        "호캉스": [], "특가할인상품": []
+    };
+
+    window.onload = () => {
+        initImages();
+        initEditors();
+        setCreateMode();
+    };
+
+    function initImages() {
+        let html = '';
+        for(let i=1; i<=10; i++) {
+            html += `
+                <div class="form-row">
+                    <div class="label">이미지 ${i}</div>
+                    <div class="input-data">
+                        <input type="file" id="file_${i}" style="display:none;" accept="image/*" onchange="previewImage(this, ${i})">
+                        <button id="btn_sel_${i}" class="btn-select-file" onclick="document.getElementById('file_${i}').click()">Select File +</button>
+                        <span id="status_${i}" class="upload-status" style="margin-left:10px;"></span>
+                        <img id="prev_${i}" class="preview-img" src="" style="display:none;">
+                        <button id="btn_del_${i}" class="btn-del-file" onclick="deleteImage(${i})">삭제</button>
+                    </div>
+                </div>`;
+        }
+        document.getElementById('imageSection').innerHTML = html;
+    }
+
+    function initEditors() {
+        const configs = [
+            {id:'desc', label:'상품설명'}, {id:'sched', label:'여행일정'}, {id:'info', label:'포함사항'},
+            {id:'excl', label:'불포함사항'}, {id:'note', label:'참고사항'}
+        ];
+        let html = '';
+        configs.forEach(ed => {
+            html += `
+                <div class="form-row">
+                    <div class="label">${ed.label}</div>
+                    <div class="input-data" style="display:block;">
+                        <div class="editor-container">
+                            <div class="editor-toolbar">
+                                <button onclick="execCmd('${ed.id}', 'bold')">B</button>
+                                <button onclick="execCmd('${ed.id}', 'italic')">I</button>
+                                <button onclick="execCmd('${ed.id}', 'underline')">U</button>
+                                <button onclick="document.getElementById('img_${ed.id}').click()">📷 사진첨부</button>
+                                <input type="file" id="img_${ed.id}" style="display:none;" onchange="insertEditorImage(this, '${ed.id}')">
+                            </div>
+                            <div id="${ed.id}" class="editor-content" contenteditable="true"></div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('editorSection').innerHTML = html;
+    }
+
+    async function previewImage(input, index) {
+        const file = input.files[0];
+        const productCode = document.getElementById('productCode').value;
+        const statusText = document.getElementById(`status_${index}`);
+        const imgPreview = document.getElementById(`prev_${index}`);
+        const selectBtn = document.getElementById(`btn_sel_${index}`);
+        const delBtn = document.getElementById(`btn_del_${index}`);
+
+        if (file) {
+            statusText.innerText = "서버 업로드 중...";
+            statusText.style.display = "inline";
+            selectBtn.style.display = "none";
+            imgPreview.style.display = "none";
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('productCode', productCode);
+            formData.append('index', index);
+
+            try {
+                const response = await fetch('../upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    imgPreview.src = result.path; 
+                    imgPreview.style.display = 'block';
+                    statusText.style.display = "none";
+                    delBtn.style.display = 'inline-block';
+                } else {
+                    alert("업로드 실패: " + result.message);
+                    statusText.style.display = "none";
+                    selectBtn.style.display = "inline";
+                }
+            } catch (error) {
+                console.error("서버 연결 에러:", error);
+                statusText.innerText = "서버 연결 오류";
+                selectBtn.style.display = "inline";
+            }
+        }
+    }
+
+    function insertEditorImage(input, editorId) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgHtml = `<img src="${e.target.result}" style="width:100%; max-width:300px;">`;
+                document.getElementById(editorId).focus();
+                document.execCommand('insertHTML', false, imgHtml);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function deleteImage(index) {
+        const img = document.getElementById(`prev_${index}`);
+        img.src = "";
+        img.style.display = 'none';
+        document.getElementById(`btn_sel_${index}`).style.display = 'inline-block';
+        document.getElementById(`btn_del_${index}`).style.display = 'none';
+        document.getElementById(`file_${index}`).value = "";
+        document.getElementById(`status_${index}`).innerText = "";
+    }
+
+    function updateSubCat() {
+        const mainVal = document.getElementById('mainCat').value;
+        const subSelect = document.getElementById('subCat');
+        subSelect.innerHTML = "";
+        if (!mainVal || (categoryData[mainVal] && categoryData[mainVal].length === 0)) {
+            subSelect.innerHTML = `<option>${mainVal ? "해당 없음" : "1차 분류를 먼저 선택하세요"}</option>`;
+            return;
+        }
+        categoryData[mainVal].forEach(item => {
+            const opt = document.createElement('option');
+            opt.innerText = item; opt.value = item;
+            subSelect.appendChild(opt);
+        });
+    }
+
+    function setCreateMode() {
+        const randomCode = "PRD-" + Math.floor(1000000 + Math.random() * 9000000);
+        document.getElementById('productCode').value = randomCode;
+    }
+
+    // [수정 완료] 형님이 불러주신 15개 항목 제목 기준 반영
+    function handleFinalSave() {
+        if (confirm("입력한 정보를 저장하시겠습니까?")) {
+            const images = [];
+            for (let i = 1; i <= 10; i++) {
+                const src = document.getElementById(`prev_${i}`).getAttribute('src');
+                if (src && src !== "") images.push(src);
+            }
+
+            const payload = {
+                "메인사진": document.getElementById('prev_1').getAttribute('src') || "",
+                "카테고리": document.getElementById('mainCat').value,
+                "지역": document.getElementById('subCat').value,
+                "상품코드": document.getElementById('productCode').value,
+                "상품명": document.getElementById('productName').value,
+                "일정": document.getElementById('duration').value,
+                "기본설명": document.getElementById('basicDescription').value,
+                "성인요금": document.getElementById('adultPrice').value,
+                "아동요금": document.getElementById('childPrice').value,
+                "상품설명": document.getElementById('desc').innerHTML,
+                "여행일정": document.getElementById('sched').innerHTML,
+                "포함사항": document.getElementById('info').innerHTML,
+                "불포함사항": document.getElementById('excl').innerHTML,
+                "참고사항": document.getElementById('note').innerHTML,
+                "상품이미지": images
+            };
+
+            if(typeof ProductAPI !== 'undefined') {
+                ProductAPI.saveProduct(payload).then(res => {
+                    alert(res.message || "저장되었습니다.");
+                }).catch(err => {
+                    alert("저장 중 오류 발생");
+                });
+            } else {
+                console.log(payload);
+                alert("ProductAPI가 로드되지 않았습니다. 경로를 확인하세요.");
+            }
+        }
+    }
+
+    function execCmd(id, cmd) { 
+        document.getElementById(id).focus(); 
+        document.execCommand(cmd, false, null); 
+    }
+
+    let currentImg = null;
+    const handler = document.getElementById('resizer-handler');
+    const dot = handler.querySelector('.resizer-dot');
+
+    document.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'IMG' && e.target.closest('.editor-content')) {
+            currentImg = e.target; updateHandler();
+        } else if (!e.target.closest('#resizer-handler')) {
+            handler.style.display = 'none'; currentImg = null;
+        }
+    });
+
+    function updateHandler() {
+        if (!currentImg) return;
+        const rect = currentImg.getBoundingClientRect();
+        handler.style.display = 'block';
+        handler.style.width = rect.width + 'px';
+        handler.style.height = rect.height + 'px';
+        handler.style.top = (rect.top + window.scrollY) + 'px';
+        handler.style.left = (rect.left + window.scrollX) + 'px';
+    }
+
+    dot.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = currentImg.clientWidth;
+        const onMouseMove = (me) => {
+            const newWidth = startWidth + (me.clientX - startX);
+            if (newWidth > 40) { currentImg.style.width = newWidth + 'px'; updateHandler(); }
+        };
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+</script>
+</body>
+</html>

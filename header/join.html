@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하누리 여행사 - 회원가입</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            margin: 0; padding: 0; /* 헤더/푸터를 위해 패딩 제거 */
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-text-size-adjust: none;
+        }
+
+        /* 기존 wrapper 유지하되 상하 여백 조정 */
+        .terms-wrapper {
+            max-width: 800px;
+            margin: 50px auto; /* 헤더 아래 여백 생성 */
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1 { font-size: 26px; font-weight: 800; color: #1a4f94; text-align: center; margin-bottom: 40px; }
+        h2 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 25px 0 10px 0; }
+        
+        .step-section {
+            transition: all 0.5s ease-in-out;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .slide-up {
+            opacity: 0;
+            transform: translateY(-30px);
+            display: none;
+        }
+
+        .terms-box {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: #475569;
+            white-space: pre-line;
+            margin-bottom: 30px;
+        }
+
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        
+        .input-row { display: flex; gap: 8px; }
+        .input-row input { flex: 1; }
+        
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 10px;
+            font-size: 15px; box-sizing: border-box; font-family: 'Pretendard';
+            transition: all 0.2s;
+        }
+        .form-group input:focus { outline: 2px solid #1a4f94; border-color: transparent; }
+
+        .check-btn {
+            padding: 0 15px; background: #f1f5f9; color: #1a4f94; border: 1px solid #1a4f94;
+            border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+            white-space: nowrap; transition: 0.2s;
+        }
+        .check-btn:hover { background: #1a4f94; color: #fff; }
+
+        .status-msg { font-size: 12px; margin-top: 5px; font-weight: 500; display: none; }
+        .status-msg.success { color: #10b981; display: block; }
+        .status-msg.error { color: #ef4444; display: block; }
+
+        .check-container {
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; padding: 15px; border-radius: 8px; transition: background 0.2s;
+        }
+        .check-container:hover { background: #f1f5f9; }
+        .check-container input { width: 22px; height: 22px; cursor: pointer; accent-color: #1a4f94; flex-shrink: 0; }
+        .check-container label { font-size: 16px; font-weight: 700; cursor: pointer; color: #1a4f94; word-break: keep-all; }
+
+        .all-agree-bottom {
+            background: #f1f5f9; padding: 10px; border-radius: 12px; 
+            margin-top: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0;
+        }
+
+        .next-btn, .submit-btn {
+            width: 100%; padding: 18px;
+            background-color: #1a4f94; color: #fff;
+            border: none; border-radius: 12px;
+            font-size: 18px; font-weight: 700;
+            cursor: pointer; transition: 0.3s;
+        }
+        .next-btn:disabled, .submit-btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+
+        #customModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #fff; padding: 30px; border-radius: 20px;
+            width: 90%; max-width: 320px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-msg { font-size: 16px; color: #334155; margin-bottom: 25px; line-height: 1.5; font-weight: 600; }
+        .modal-close {
+            background: #1a4f94; color: #fff; border: none; padding: 12px 30px;
+            border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        @media screen and (max-width: 480px) {
+            .terms-wrapper { padding: 25px 20px; border-radius: 15px; margin: 20px auto; }
+            h1 { font-size: 20px; margin-bottom: 25px; }
+            .form-group label { font-size: 13px; }
+            .next-btn, .submit-btn { padding: 15px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div id="customModal">
+    <div class="modal-content">
+        <div class="modal-msg" id="modalMsg">메시지 내용</div>
+        <button class="modal-close" onclick="closeModal()">확인</button>
+    </div>
+</div>
+
+<div class="terms-wrapper">
+    <h1 id="mainTitle">회원가입 약관 동의</h1>
+
+    <div id="step1" class="step-section">
+        <h2>이용약관 (필수)</h2>
+        <div class="terms-box" id="termsBox">
+            
+        </div>
+
+        <h2>개인정보 처리방침 (필수)</h2>
+        <div class="terms-box" id="privacyBox">
+            
+        </div>
+
+        <div class="all-agree-bottom">
+            <div class="check-container">
+                <input type="checkbox" id="allAgree" onclick="validate()">
+                <label for="allAgree">이용약관 및 개인정보 처리방침에 모두 동의합니다.</label>
+            </div>
+        </div>
+        <button class="next-btn" id="nextBtn" disabled onclick="showForm()">다음 단계로</button>
+    </div>
+
+    <div id="step2" class="step-section hidden">
+        <div class="form-group">
+            <label>아이디</label>
+            <div class="input-row">
+                <input type="text" id="userId" placeholder="아이디 입력" oninput="resetCheck('Id')">
+                <button class="check-btn" onclick="checkDup('Id')">중복확인</button>
+            </div>
+            <div id="msgId" class="status-msg"></div>
+        </div>
+        <div class="form-group">
+            <label>비밀번호</label>
+            <input type="password" id="userPw" placeholder="비밀번호를 입력해주세요">
+        </div>
+        <div class="form-group">
+            <label>이름</label>
+            <input type="text" id="userName" placeholder="실명을 입력해주세요">
+        </div>
+        <div class="form-group">
+            <label>닉네임</label>
+            <div class="input-row">
+                <input type="text" id="userNick" placeholder="닉네임 입력" oninput="resetCheck('Nick')">
+                <button class="check-btn" onclick="checkDup('Nick')">중복확인</button>
+            </div>
+            <div id="msgNick" class="status-msg"></div>
+        </div>
+        <div class="form-group">
+            <label>이메일</label>
+            <input type="email" id="userEmail" placeholder="example@email.com">
+        </div>
+        <div class="form-group">
+            <label>휴대폰</label>
+            <input type="tel" id="userPhone" placeholder="010-0000-0000">
+        </div>
+        <div class="form-group">
+            <label>생년월일</label>
+            <input type="date" id="userBirth">
+        </div>
+        <div class="form-group">
+            <label>지역</label>
+            <select id="userRegion">
+                <option value="">지역을 선택해주세요</option>
+                <option value="서울">서울</option>
+                <option value="경기">경기</option>
+                <option value="인천">인천</option>
+                <option value="강원">강원</option>
+                <option value="충청">충청</option>
+                <option value="전라">전라</option>
+                <option value="경상">경상</option>
+                <option value="제주">제주</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>상세주소</label>
+            <input type="text" id="userAddr" placeholder="나머지 주소를 입력해주세요">
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="goNext()">가입 완료하기</button>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    // [추가] 외부 HTML 로드 함수
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`404: ${filePath} 없음`);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    const nextBtn = document.getElementById('nextBtn');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const mainTitle = document.getElementById('mainTitle');
+    
+    let isIdChecked = false;
+    let isNickChecked = false;
+
+    function openModal(msg) {
+        document.getElementById('modalMsg').innerText = msg;
+        document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+
+    function validate() { nextBtn.disabled = !document.getElementById('allAgree').checked; }
+
+    function showForm() {
+        step1.classList.add('slide-up');
+        setTimeout(() => {
+            step1.style.display = 'none';
+            mainTitle.innerText = "회원정보 입력";
+            step2.classList.remove('hidden');
+            setTimeout(() => { step2.style.opacity = '1'; step2.style.transform = 'translateY(0)'; }, 50);
+        }, 500);
+    }
+
+    // 중복 확인 로직 (서버의 members.json 데이터를 읽어와서 체크)
+    async function checkDup(type) {
+        const val = document.getElementById(type === 'Id' ? 'userId' : 'userNick').value.trim();
+        if (!val) { openModal(`${type === 'Id' ? '아이디' : '닉네임'}를 입력해주세요.`); return; }
+        
+        try {
+            // 서버에서 members.json 데이터를 가져옴
+            const response = await fetch('../json/members.json');
+            let users = [];
+            if (response.ok) {
+                users = await response.json();
+            }
+
+            // 한글 키값 기준으로 중복 체크
+            const isExist = users.some(u => (type === 'Id' ? u["아이디"] : u["닉네임"]) === val);
+
+            const msgEl = document.getElementById(`msg${type}`);
+            msgEl.style.display = 'block';
+
+            if (isExist) {
+                msgEl.innerText = `이미 사용 중인 ${type === 'Id' ? '아이디' : '닉네임'}입니다.`;
+                msgEl.className = 'status-msg error';
+                if(type === 'Id') isIdChecked = false; else isNickChecked = false;
+            } else {
+                msgEl.innerText = `사용 가능한 ${type === 'Id' ? '아이디' : '닉네임'}입니다.`;
+                msgEl.className = 'status-msg success';
+                if(type === 'Id') isIdChecked = true; else isNickChecked = true;
+            }
+        } catch (e) {
+            // 파일이 없으면 첫 가입자이므로 중복 없음 처리
+            const msgEl = document.getElementById(`msg${type}`);
+            msgEl.style.display = 'block';
+            msgEl.innerText = `사용 가능한 ${type === 'Id' ? '아이디' : '닉네임'}입니다.`;
+            msgEl.className = 'status-msg success';
+            if(type === 'Id') isIdChecked = true; else isNickChecked = true;
+        }
+    }
+
+    function resetCheck(type) {
+        if(type === 'Id') isIdChecked = false;
+        else isNickChecked = false;
+        const msgEl = document.getElementById(`msg${type}`);
+        msgEl.className = 'status-msg';
+        msgEl.innerText = '';
+        msgEl.style.display = 'none';
+    }
+
+    // 서버로 데이터 전송 및 가입 완료
+    async function goNext() {
+        if (!isIdChecked || !isNickChecked) {
+            openModal("아이디와 닉네임 중복 확인을 완료해주세요.");
+            return;
+        }
+
+        // HTML ID와 members.json 한글 키 매핑
+        const fieldMap = {
+            userId: "아이디", userPw: "비밀번호", userName: "이름", 
+            userNick: "닉네임", userEmail: "이메일", userPhone: "휴대폰", 
+            userBirth: "생년월일", userRegion: "지역", userAddr: "주소"
+        };
+
+        const formData = {};
+        for (let id in fieldMap) {
+            const val = document.getElementById(id).value.trim();
+            if (!val) { 
+                openModal(`${fieldMap[id]}을(를) 입력해주세요.`); 
+                document.getElementById(id).focus(); 
+                return; 
+            }
+            formData[fieldMap[id]] = val; // 한글 키로 저장
+        }
+
+        // 추가 필드 기본값 설정
+        formData["마일리지"] = 0;
+        formData["접근차단"] = "정상";
+
+        try {
+            // server.js의 /signup API 호출
+            const response = await fetch('/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert(formData["이름"] + "님, 하누리 여행사 가입을 축하드립니다!");
+                location.href = '../header/login.html'; 
+            } else {
+                alert("서버 오류로 가입에 실패했습니다.");
+            }
+        } catch (err) {
+            console.error("서버 연결 실패:", err);
+            alert("서버와 통신할 수 없습니다.");
+        }
+    }
+
+    
+  async function loadTerms() {
+    try {
+        console.log("데이터 로드 시작..."); // 디버깅용 콘솔
+        const response = await fetch('../json/sitesetting.json');
+        
+        if (!response.ok) throw new Error("파일 경로가 틀렸습니다.");
+        
+        const json = await response.json();
+        const data = json[0]; // 배열의 첫 번째 요소 추출
+
+        // 데이터가 있는지 확인 후 꽂아넣기
+        const tBox = document.getElementById('termsBox');
+        const pBox = document.getElementById('privacyBox');
+
+        if (tBox && data["이용약관"]) {
+            tBox.innerText = data["이용약관"];
+            console.log("이용약관 로드 완료");
+        }
+        if (pBox && data["개인정보"]) {
+            pBox.innerText = data["개인정보"];
+            console.log("개인정보 로드 완료");
+        }
+
+    } catch (e) {
+        console.error("원인 발생:", e);
+    }
+}
+
+// 🚀 반드시 이 블록이 있어야 실행됩니다!
+window.addEventListener('DOMContentLoaded', loadTerms);
+
+
+    window.addEventListener('load', () => {
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+    });
+</script>
+
+</body>
+</html>
