@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1:1 문의 / 상담 접수</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --primary-black: #111111;
+            --border-light: #eeeeee;
+            --border-medium: #dddddd;
+            --bg-gray: #fcfcfc;
+            --text-gray: #666666;
+            --text-light: #999999;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .title-area {
+            border-bottom: 2px solid #222;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .title-area h2 {
+            font-size: 22px;
+            margin: 0;
+            color: #000;
+            letter-spacing: -0.5px;
+            font-weight: 700;
+        }
+
+        .write-form {
+            border-top: 1px solid var(--border-medium);
+        }
+
+        .row {
+            display: flex;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .label {
+            width: 150px;
+            background-color: var(--bg-gray);
+            padding: 18px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 10px 15px;
+        }
+
+        .input-field input, 
+        .input-field select, 
+        .input-field textarea {
+            width: 100%;
+            border: 1px solid var(--border-medium);
+            padding: 10px 12px;
+            font-size: 14px;
+            border-radius: 3px;
+            outline: none;
+            box-sizing: border-box;
+            background-color: #fff;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .input-field input:focus, 
+        .input-field select:focus, 
+        .input-field textarea:focus {
+            border-color: var(--primary-black);
+        }
+
+        .input-field textarea {
+            height: 250px;
+            resize: none;
+            line-height: 1.6;
+        }
+
+        /* 읽기 전용 필드 스타일 */
+        .input-field input[readonly] {
+            background-color: #f9f9f9;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .info-text {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.6;
+            padding-left: 5px;
+        }
+
+        .btn-area {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            padding: 15px 50px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #bbb;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-cancel {
+            background-color: #fff;
+            color: var(--text-gray);
+        }
+
+        .btn-cancel:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-black);
+            color: #fff;
+            border-color: var(--primary-black);
+        }
+
+        .btn-submit:hover {
+            background-color: #000;
+        }
+
+        /* --- 모달 스타일 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; /* 기본 숨김 */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 40px 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-icon {
+            width: 50px; height: 50px;
+            background-color: var(--primary-black);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            margin: 0 auto 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--primary-black);
+        }
+
+        .modal-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-gray);
+            margin-bottom: 30px;
+        }
+
+        .btn-modal {
+            width: 100%;
+            padding: 14px 0;
+            background-color: var(--primary-black);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 600px) {
+            .row { flex-direction: column; }
+            .label { width: 100%; padding: 12px 15px; border-bottom: none; box-sizing: border-box; }
+            .input-field { padding: 0 15px 15px 15px; }
+            .btn { flex: 1; padding: 15px 0; }
+            .container { margin: 15px auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div class="container">
+    <div class="title-area">
+        <h2>1:1 문의 / 상담 접수</h2>
+    </div>
+
+    <div class="write-form">
+        <div class="row">
+            <div class="label">문의유형</div>
+            <div class="input-field">
+                <select id="supportType">
+                    <option value="여행상품 문의">여행상품 문의</option>
+                    <option value="결제방식문의">결제방식문의</option>
+                    <option value="출금문의">출금문의</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">작성자</div>
+            <div class="input-field">
+                <input type="text" id="userNickname" placeholder="로그인 후 이용 가능합니다." readonly>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">이메일 주소</div>
+            <div class="input-field">
+                <input type="email" id="userEmail" placeholder="example@email.com" readonly>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">연락처</div>
+            <div class="input-field">
+                <input type="tel" id="userPhone" placeholder="010-0000-0000" readonly>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">제목</div>
+            <div class="input-field">
+                <input type="text" id="supportTitle" placeholder="문의 제목을 입력해 주세요.">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label" style="align-items: flex-start; padding-top: 25px;">문의내용</div>
+            <div class="input-field">
+                <textarea id="supportContent" placeholder="문의내용을 상세히 기재해 주시면 보다 정확한 답변이 가능합니다."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-text">
+        ※ 개인정보는 문의 답변을 위한 용도로만 사용됩니다.<br>
+        ※ 작성하신 문의내용 및 답변은 마이페이지에서 확인하실 수 있습니다.
+    </div>
+
+    <div class="btn-area">
+        <button class="btn btn-cancel" onclick="handleCancel()">취소</button>
+        <button class="btn btn-submit" onclick="submitForm()">문의 접수</button>
+    </div>
+</div>
+
+<div id="successModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-icon">✓</div>
+        <div class="modal-title">문의가 정상적으로 접수되었습니다.</div>
+        <div class="modal-text">
+            담당자가 확인 후 빠른 시일 내에 답변드리겠습니다.<br>
+            작성하신 내용은 <strong>문의목록</strong>에서 확인하실 수 있습니다.
+        </div>
+        <button class="btn-modal" onclick="goToSupportList()">확인 (목록으로 이동)</button>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    /**
+     * 외부 HTML 로드 함수
+     */
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    /**
+     * 1. 초기화 및 회원 정보 자동 채우기
+     */
+    let currentUserId = ""; // 현재 로그인한 아이디 저장용
+
+    async function initPage() {
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+
+        // 로컬스토리지에서 로그인 유저 정보 가져오기
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        
+        if (!loggedInUser || !loggedInUser["아이디"]) {
+            alert("로그인이 필요한 서비스입니다.");
+            location.href = '../header/login.html';
+            return;
+        }
+
+        currentUserId = loggedInUser["아이디"];
+
+        try {
+            // members.json에서 최신 정보 대조하여 가져오기
+            const response = await fetch('../json/members.json');
+            const members = await response.json();
+            const user = members.find(m => m["아이디"] === currentUserId);
+
+            if (user) {
+                document.getElementById('userNickname').value = user["닉네임"] || "";
+                document.getElementById('userEmail').value = user["이메일"] || "";
+                document.getElementById('userPhone').value = user["휴대폰"] || "";
+            }
+        } catch (err) {
+            console.error("회원 정보를 불러오는 데 실패했습니다.", err);
+        }
+    }
+
+    window.onload = initPage;
+
+    /**
+     * 2. 폼 전송 로직 (support.json 구조에 맞춤)
+     */
+    async function submitForm() {
+        const payload = {
+            "아이디": currentUserId,
+            "제목": document.getElementById('supportTitle').value.trim(),
+            "닉네임": document.getElementById('userNickname').value,
+            "분류": document.getElementById('supportType').value,
+            "이메일": document.getElementById('userEmail').value,
+            "휴대폰": document.getElementById('userPhone').value,
+            "내용": document.getElementById('supportContent').value.trim(),
+            "관리자답변": "",
+            "상태": "접수대기",
+            "등록일": new Date().toISOString().split('T')[0]
+        };
+
+        // 유효성 검사
+        if(!payload["아이디"]) {
+            alert("로그인 후 이용 가능합니다.");
+            return;
+        }
+        if(!payload["제목"] || !payload["내용"]) {
+            alert("제목과 문의내용을 입력해 주세요.");
+            return;
+        }
+
+        try {
+            // [수정된 부분] 실제 서버 API 경로로 요청 전송
+            const response = await fetch('/api/support', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('successModal').style.display = 'flex';
+            } else {
+                alert("저장 중 오류가 발생했습니다: " + result.message);
+            }
+            
+        } catch (err) {
+            console.error("서버 연결 실패", err);
+            alert("서버와 통신할 수 없습니다.");
+        }
+    }
+
+    /**
+     * 3. 이동 함수
+     */
+    function handleCancel() {
+        history.back();
+    }
+
+    function goToSupportList() {
+        location.href = 'supportlist.html'; // 목록 페이지 경로
+    }
+</script>
+
+</body>
+</html>

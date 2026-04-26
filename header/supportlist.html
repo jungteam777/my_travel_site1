@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1:1 문의 내역</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #fff;
+            color: #222;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 헤더/푸터 로드 영역 */
+        #header-load { min-height: 60px; }
+        #footer-load { margin-top: auto; }
+
+        .board-container {
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        /* 1. 헤더 영역 정렬 교정 */
+        .main-title {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #111;
+        }
+
+        .main-title h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* 2. 테이블 헤더 수직 정렬(Align-items) 적용 */
+        .board-header-row {
+            display: flex;
+            background-color: #fcfcfc;
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #666;
+            text-align: center;
+        }
+
+        /* 3. 목록 아이템 수직 중앙 정렬 교정 */
+        .board-item {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .item-summary {
+            display: flex;
+            align-items: center; /* 모든 요소를 수직 중앙으로 */
+            padding: 20px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .item-summary:hover {
+            background-color: #fafafa;
+        }
+
+        /* 각 컬럼 너비 및 내부 정렬 */
+        .col-num { width: 80px; flex-shrink: 0; }
+        
+        /* 제목 영역: 뱃지와 텍스트가 일직선상에 오도록 설정 */
+        .col-title { 
+            flex: 1; 
+            text-align: left; 
+            padding-left: 20px; 
+            display: flex; 
+            align-items: center; /* 뱃지와 텍스트 정렬 핵심 */
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .col-author { width: 120px; flex-shrink: 0; color: #555; }
+        .col-date { width: 130px; flex-shrink: 0; color: #888; font-variant-numeric: tabular-nums; }
+        .col-status { width: 100px; flex-shrink: 0; }
+
+        /* 4. 뱃지 상하 정렬 미세 교정 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 22px;
+            font-size: 11px;
+            padding: 0 8px;
+            border-radius: 3px;
+            margin-right: 12px;
+            background: #f1f1f1;
+            color: #888;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* 5. 상태값 가독성 및 정렬 */
+        .status { 
+            font-weight: 700; 
+            font-size: 12px;
+            letter-spacing: -0.2px;
+        }
+        .status.waiting { color: #ff5252; }
+        .status.done { color: #2196f3; }
+
+        /* 6. 아코디언 답변 영역 내부 정렬 */
+        .item-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
+            background-color: #fdfdfd;
+        }
+
+        .detail-content {
+            padding: 35px 40px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .q-box, .a-box {
+            display: flex;
+            align-items: flex-start; /* 텍스트 시작점에 맞춤 */
+        }
+
+        .icon-qa {
+            width: 28px;
+            font-weight: 900;
+            font-size: 17px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+
+        .q-box .icon-qa { color: #111; }
+        .a-box .icon-qa { color: #2196f3; }
+
+        .answer-text {
+            flex: 1;
+            line-height: 1.7;
+            font-size: 15px;
+            color: #444;
+            letter-spacing: -0.3px;
+            white-space: pre-wrap; /* 줄바꿈 허용 */
+        }
+
+        .a-box {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px dashed #e5e5e5;
+        }
+
+        /* 페이지네이션 스타일 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+            gap: 8px;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .page-btn.active {
+            background-color: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        .page-btn:hover:not(.active) {
+            background-color: #f5f5f5;
+        }
+
+        /* 푸터 및 버튼 */
+        .footer-area {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .btn-write {
+            background-color: #111;
+            color: #fff;
+            padding: 14px 35px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-write:hover { background-color: #000; }
+
+        /* 모바일 최적화 수정 부분 */
+        @media (max-width: 768px) {
+            .board-container { margin: 30px auto; padding: 0 15px; }
+            .main-title h1 { font-size: 20px; }
+            
+            /* 헤더에서 불필요한 항목 숨김 */
+            .col-num, .col-author, .col-date { display: none; }
+            .board-header-row { padding: 10px 0; }
+            .board-header-row .col-title { padding-left: 15px !important; }
+
+            /* 아이템 레이아웃 조정 */
+            .item-summary { padding: 15px 0; }
+            .col-title { padding-left: 10px; font-size: 13px; line-height: 1.4; }
+            .badge { height: 18px; font-size: 10px; padding: 0 5px; margin-right: 8px; }
+            .col-status { width: 80px; }
+            .status { font-size: 11px; }
+
+            /* 상세보기 패딩 축소 */
+            .detail-content { padding: 25px 20px; }
+            .answer-text { font-size: 14px; }
+            
+            /* 버튼 크기 조정 */
+            .btn-write { padding: 12px 25px; width: 100%; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div class="board-container">
+    <div class="main-title">
+        <h1>1:1 문의 내역</h1>
+    </div>
+
+    <div class="board-header-row">
+        <div class="col-num">번호</div>
+        <div class="col-title" style="padding-left:100px;">제목</div> 
+        <div class="col-author">작성자</div>
+        <div class="col-date">등록일</div>
+        <div class="col-status">진행상태</div>
+    </div>
+
+    <div id="inquiryList">
+        <div style='text-align:center; padding:50px; color:#999;'>데이터를 불러오는 중입니다...</div>
+    </div>
+
+    <div id="pagination" class="pagination"></div>
+
+    <div class="footer-area">
+        <button class="btn-write" onclick="goToWrite()">문의하기</button>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    let allInquiries = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let currentUserId = "";
+
+    // [추가] 외부 컴포넌트 로드 함수
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`404: ${filePath} 없음`);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function initPage() {
+        // 1. 컴포넌트 로드 호출
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+
+        // 2. 로그인 정보 확인
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (!loggedInUser || !loggedInUser["아이디"]) {
+            alert("로그인이 필요한 서비스입니다.");
+            location.href = '../header/login.html';
+            return;
+        }
+        currentUserId = loggedInUser["아이디"];
+
+        // 3. 서버 대신 로컬 JSON 파일에서 데이터 가져오기
+        try {
+            const response = await fetch('../json/support.json'); // 경로 수정됨
+            const data = await response.json();
+            
+            // 본인 아이디로 작성된 글만 필터링
+            allInquiries = data.filter(item => item["아이디"] === currentUserId);
+            
+            // 최신글이 위로 오도록 정렬 (등록일 기준 내림차순)
+            allInquiries.sort((a, b) => new Date(b["등록일"]) - new Date(a["등록일"]));
+            
+            renderList();
+        } catch (err) {
+            console.error("데이터 로드 실패:", err);
+            document.getElementById('inquiryList').innerHTML = "<div style='text-align:center; padding:50px; color:#999;'>내역을 불러오는 중 오류가 발생했습니다.</div>";
+        }
+    }
+
+    window.onload = initPage;
+
+    function renderList() {
+        const listContainer = document.getElementById('inquiryList');
+        const paginationContainer = document.getElementById('pagination');
+        listContainer.innerHTML = "";
+        paginationContainer.innerHTML = "";
+
+        if (!allInquiries || allInquiries.length === 0) {
+            listContainer.innerHTML = "<div style='text-align:center; padding:50px; color:#999;'>문의 내역이 없습니다.</div>";
+            return;
+        }
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pagedItems = allInquiries.slice(startIndex, endIndex);
+
+        pagedItems.forEach((item, index) => {
+            const statusClass = (item["상태"] === "접수대기" || item["상태"] === "답변대기") ? "waiting" : "done";
+            const dateStr = item["등록일"] || "";
+            const formattedDate = dateStr.replace(/-/g, '.');
+            const replyText = item["관리자답변"] || "현재 담당자가 확인 중입니다. 잠시만 기다려 주시면 정성껏 답변드리겠습니다.";
+            const displayNum = allInquiries.length - startIndex - index;
+
+            const itemHtml = `
+                <div class="board-item">
+                    <div class="item-summary" onclick="toggleDetail(this)">
+                        <div class="col-num">${displayNum}</div>
+                        <div class="col-title">
+                            <span class="badge">${item["분류"] || "문의"}</span>
+                            ${item["제목"]}
+                        </div>
+                        <div class="col-author">${item["닉네임"]}</div>
+                        <div class="col-date">${formattedDate}</div>
+                        <div class="col-status"><span class="status ${statusClass}">${item["상태"]}</span></div>
+                    </div>
+                    <div class="item-detail">
+                        <div class="detail-content">
+                            <div class="q-box">
+                                <div class="icon-qa">Q.</div>
+                                <div class="answer-text">${item["내용"]}</div>
+                            </div>
+                            <div class="a-box">
+                                <div class="icon-qa">A.</div>
+                                <div class="answer-text">${replyText}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            listContainer.innerHTML += itemHtml;
+        });
+
+        const totalPages = Math.ceil(allInquiries.length / itemsPerPage);
+        if(totalPages > 1) {
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderList();
+                    window.scrollTo(0, 0);
+                };
+                paginationContainer.appendChild(btn);
+            }
+        }
+    }
+
+    function toggleDetail(element) {
+        const detail = element.nextElementSibling;
+        const allDetails = document.querySelectorAll('.item-detail');
+        
+        if (detail.style.maxHeight && detail.style.maxHeight !== '0px') {
+            detail.style.maxHeight = '0px';
+        } else {
+            allDetails.forEach(el => el.style.maxHeight = '0px');
+            detail.style.maxHeight = detail.scrollHeight + "px";
+        }
+    }
+
+    function goToWrite() {
+        location.href = 'support.html';
+    }
+</script>
+
+</body>
+</html>

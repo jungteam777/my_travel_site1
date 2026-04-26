@@ -38,13 +38,37 @@
             height: auto;
         }
 
+        .page-title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
         .page-title {
             font-size: 28px;
             font-weight: 700;
             color: var(--primary-color);
-            margin-top: 20px;
-            margin-bottom: 30px; 
+            margin: 0;
         }
+
+        /* 찜하기 버튼 스타일 */
+        .btn-wish {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-wish:hover { background: #f8f9fa; border-color: #bbb; }
+        .btn-wish.active { color: #ff4757; border-color: #ff4757; background: #fff1f2; }
 
         .rich-content {
             font-size: 16px;
@@ -240,19 +264,8 @@
         .star-click-group label:hover, .star-click-group label:hover ~ label, .star-click-group input:checked ~ label { color: var(--star-color); }
 
         .modal-footer { display: grid; grid-template-columns: 1fr 120px; gap: 12px; }
-        .btn-submit { background-color: #1a1c21; color: #fff; border: none; padding: 166px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; padding: 16px; }
+        .btn-submit { background-color: #1a1c21; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; padding: 16px; }
         .btn-close-footer { background-color: #fff; color: #333; border: 1px solid #ddd; padding: 16px; border-radius: 10px; cursor: pointer; font-size: 15px; }
-
-        .alert-mask { 
-            display: none; 
-            position: fixed; 
-            z-index: 20000; 
-            left: 0; top: 0; width: 100%; height: 100%; 
-            background-color: rgba(0,0,0,0.6); 
-            justify-content: center; align-items: flex-start;
-        }
-        .alert-box { background: #fff; width: 320px; border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);  margin-top: 50px; }
-        .btn-alert-confirm { width: 100%; background: var(--text-main); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
 
         @media (max-width: 768px) {
             .tab-item { font-size: 13px; padding: 12px 0; }
@@ -267,7 +280,10 @@
 
 <div id="wrapper">
     <div class="container">
-        <div class="page-title">상품 정보</div>
+        <div class="page-title-area">
+            <div class="page-title">상품 정보</div>
+        </div>
+        
         <div id="pDescription" class="rich-content"></div>
 
         <div class="tab-container">
@@ -312,7 +328,7 @@
                 </div>
                 <div class="summary-right">
                     <button class="btn-view-all" onclick="goToAllReviews()">전체보기</button>
-                    <button class="btn-write-primary" onclick="requestOpenModal()">후기 작성하기</button>
+                    <button class="btn-write-primary" onclick="requestOpenModal(event)">후기 작성하기</button>
                 </div>
             </div>
             <div id="reviewList">
@@ -358,15 +374,9 @@
     </div>
 </div>
 
-<div id="alertModal" class="alert-mask">
-    <div class="alert-box">
-        <div id="alertMessage" class="alert-msg" style="margin-bottom:20px;"></div>
-        <button class="btn-alert-confirm" onclick="closeAlert()">확인</button>
-    </div>
-</div>
-
 <script>
-    // Wix Iframe 높이 조절
+    let currentProduct = null;
+
     function sendHeight() {
         const height = document.body.scrollHeight;
         window.parent.postMessage({ type: 'SET_HEIGHT', height: height }, '*');
@@ -374,29 +384,24 @@
 
     const observer = new MutationObserver(() => { sendHeight(); });
     window.onload = () => {
-        loadProductDetail(); // 로드 시 데이터 불러오기 실행
+        loadProductDetail();
         sendHeight();
         observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     };
 
-    // [추가] JSON 데이터 로드 및 매칭 로직
     async function loadProductDetail() {
         try {
-            // 부모창(index.html)의 주소창에서 id 파라미터 추출
-            const params = new URLSearchParams(window.parent.location.search);
+            const params = new URLSearchParams(window.location.search);
             const productId = params.get('id');
-
             if (!productId) return;
 
             const response = await fetch('../json/products.json');
             if (!response.ok) throw new Error('데이터 로드 실패');
             const products = await response.json();
 
-            // 상품 코드로 해당 상품 찾기
             const item = products.find(p => p["상품코드"] === productId);
-
             if (item) {
-                // 한글 키값에 맞게 매칭
+                currentProduct = item;
                 document.getElementById('pDescription').innerHTML = item["상품설명"] || "상세 설명이 없습니다.";
                 document.getElementById('pTravelDate').innerHTML = item["여행일정"] || "일정 정보가 없습니다.";
                 document.getElementById('scheduleMainTitle').innerText = item["상품명"] || "여행 일정표";
@@ -404,17 +409,60 @@
                 document.getElementById('pExclude').innerHTML = item["불포함사항"] || "불포함사항이 없습니다.";
                 document.getElementById('pReference').innerHTML = item["참고사항"] || "참고사항이 없습니다.";
                 
-                // 리뷰가 있다면 렌더링 (데이터 구조에 따라 조정 가능)
-                if (item.reviews) renderReviews(item.reviews);
-                
+                // [리뷰 연동 로직 시작] - 서버의 API에서 최신 리뷰 목록을 가져와 필터링
+                const reviewRes = await fetch('/api/reviews');
+                if (reviewRes.ok) {
+                    const allReviews = await reviewRes.json();
+                    // 해당 상품의 리뷰만 필터링
+                    const filteredReviews = allReviews.filter(r => r["상품코드"] === productId);
+                    renderReviews(filteredReviews);
+                } else if (item.reviews) {
+                    // 서버 API 실패 시 제품 정보 내의 기존 리뷰 데이터 시도
+                    renderReviews(item.reviews);
+                }
+                // [리뷰 연동 로직 끝]
+
                 setTimeout(sendHeight, 300);
             }
-        } catch (error) {
-            console.error("Error:", error);
+        } catch (error) { console.error("Error:", error); }
+    }
+
+    async function toggleWish() {
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (!user) {
+            showCustomAlert("회원전용 서비스입니다. 로그인 후 이용해 주세요.", true);
+            return;
+        }
+
+        if (!currentProduct) return;
+
+        const wishData = {
+            "아이디": user["아이디"],
+            "상품명": currentProduct["상품명"],
+            "메인사진": currentProduct["메인사진"] || currentProduct["이미지"],
+            "등록일": new Date().toLocaleString()
+        };
+
+        try {
+            const res = await fetch('/save-json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: 'wishlist.json',
+                    data: [wishData]
+                })
+            });
+
+            if (res.ok) {
+                document.getElementById('wishBtn').classList.add('active');
+                document.getElementById('wishIcon').innerText = '♥';
+                showCustomAlert("찜목록에 등록되었습니다.");
+            }
+        } catch (e) {
+            showCustomAlert("찜하기 실패. 다시 시도해주세요.");
         }
     }
 
-    // 기존 탭/모달/리뷰 로직 (수정 없이 그대로 유지)
     function switchTab(index) {
         const tabs = document.querySelectorAll('.tab-item');
         const contents = document.querySelectorAll('.tab-content');
@@ -427,21 +475,68 @@
         setTimeout(sendHeight, 50);
     }
 
-    function goToAllReviews() { window.parent.postMessage({ type: 'NAVIGATE', url: '/reviews' }, '*'); }
-    function showCustomAlert(msg) { document.getElementById('alertMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
-    function closeAlert() { document.getElementById('alertModal').style.display = 'none'; }
-    function requestOpenModal() { window.parent.postMessage({ type: 'CHECK_LOGIN_FOR_REVIEW' }, '*'); }
+    function goToAllReviews() { 
+    window.parent.location.href = '../header/review.html'; 
+}
+    
+    function showCustomAlert(msg, redirect = false) { 
+        alert(msg);
+        if(redirect) {
+            location.href = '../header/login.html';
+        }
+    }
+    
+    function requestOpenModal(event) { 
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (user) {
+            openModal(event); 
+        } else {
+            showCustomAlert("회원전용 서비스입니다. 로그인 후 이용해 주세요.", true);
+        }
+    }
+
     function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
 
-    function submitLogin() {
+    async function submitLogin() {
         const loginId = document.getElementById('loginId').value;
         const password = document.getElementById('loginPassword').value;
         if(!loginId || !password) { showCustomAlert("아이디와 비밀번호를 입력해주세요."); return; }
-        window.parent.postMessage({ type: 'TRY_LOGIN', loginId, password }, '*');
+        
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "아이디": loginId, "비밀번호": password })
+            });
+            const result = await response.json();
+            if (result.success) {
+                localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                closeLoginModal();
+                openModal();
+            } else {
+                showCustomAlert(result.message || "로그인 정보가 올바르지 않습니다.");
+            }
+        } catch (e) {
+            showCustomAlert("서버와 통신 중 오류가 발생했습니다.");
+        }
     }
 
-    function openModal() { document.getElementById('reviewModal').style.display = 'flex'; }
+    function openModal(event) { 
+        const modal = document.getElementById('reviewModal');
+        const overlay = modal.querySelector('.modal-overlay');
+        
+        // 버튼의 현재 위치 계산하여 모달 위치 조정
+        if (event && event.currentTarget) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            // 버튼 위치에 맞춰 margin-top 설정 (최소 20px 여백 유지)
+            overlay.style.marginTop = Math.max(20, rect.top + scrollTop - 100) + 'px';
+        }
+
+        modal.style.display = 'flex'; 
+    }
+
     function closeModal() { 
         document.getElementById('reviewModal').style.display = 'none';
         document.getElementById('mTitle').value = "";
@@ -450,13 +545,38 @@
         if(checkedRating) checkedRating.checked = false;
     }
 
-    function submitReview() {
+    async function submitReview() {
         const title = document.getElementById('mTitle').value;
         const content = document.getElementById('mContent').value;
         const rating = document.querySelector('input[name="rating"]:checked')?.value;
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+
         if(!title || !content || !rating) { showCustomAlert("모든 항목을 입력해주세요."); return; } 
-        window.parent.postMessage({ type: 'SUBMIT_REVIEW', payload: { title, content, rating: parseInt(rating) } }, '*');
-        closeModal();
+        
+        const reviewData = {
+            "상품코드": currentProduct ? currentProduct["상품코드"] : "",
+            "제목": title,
+            "내용": content,
+            "별점": parseInt(rating),
+            "아이디": user["아이디"],
+            "작성자": user["닉네임"] || "익명",
+            "승인여부": "N",
+            "생성날짜": new Date().toISOString().split('T')[0]
+        };
+
+        try {
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            });
+            if (res.ok) {
+                showCustomAlert("소중한 후기 감사합니다! 관리자 확인 후 곧 등록됩니다.");
+                closeModal();
+            }
+        } catch (e) {
+            showCustomAlert("저장에 실패했습니다.");
+        }
     }
 
     function renderReviews(reviews) {
@@ -465,7 +585,10 @@
         const avgScoreSpan = document.getElementById('avgScore');
         const avgStarsDiv = document.getElementById('avgStars');
 
-        if (!reviews || reviews.length === 0) {
+        // 승인여부가 'Y'인 것만 화면에 노출
+        const approvedReviews = (reviews || []).filter(rev => rev["승인여부"] === "Y" || rev.status === "approved");
+
+        if (!approvedReviews || approvedReviews.length === 0) {
             listDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">등록된 후기가 없습니다.</div>';
             countSpan.innerText = '(0)';
             avgScoreSpan.innerText = "0.0";
@@ -473,26 +596,29 @@
             return;
         }
 
-        countSpan.innerText = `(${reviews.length})`;
-        const avg = reviews.reduce((acc, cur) => acc + (cur.rating || 0), 0) / reviews.length;
+        countSpan.innerText = `(${approvedReviews.length})`;
+        const avg = approvedReviews.reduce((acc, cur) => acc + (cur["별점"] || cur.rating || 0), 0) / approvedReviews.length;
         avgScoreSpan.innerText = avg.toFixed(1);
         avgStarsDiv.innerText = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
 
         let html = '';
-        reviews.forEach(rev => {
-            const date = rev._createdDate ? new Date(rev._createdDate).toLocaleDateString() : '';
-            const starStr = '★'.repeat(rev.rating || 0) + '☆'.repeat(5 - (rev.rating || 0));
+        approvedReviews.forEach(rev => {
+            const dateVal = rev["생성날짜"] || rev._createdDate;
+            const date = dateVal ? new Date(dateVal).toLocaleDateString() : '';
+            const ratingVal = rev["별점"] || rev.rating || 0;
+            const starStr = '★'.repeat(ratingVal) + '☆'.repeat(5 - ratingVal);
+            
             html += `
                 <div class="review-card">
                     <div class="card-top" onclick="toggleDetail(this)">
                         <div class="card-info">
                             <div class="small-stars">${starStr}</div>
-                            <div class="card-title">${rev.title || ''}</div>
-                            <div class="card-meta"><span>작성자: <b>${rev.writerName || '익명'}</b></span><span>|</span><span>${date}</span></div>
+                            <div class="card-title">${rev["제목"] || rev.title || ''}</div>
+                            <div class="card-meta"><span>작성자: <b>${rev["작성자"] || rev["아이디"] || rev.writerName || '익명'}</b></span><span>|</span><span>${date}</span></div>
                         </div>
                         <button class="btn-detail-trigger">내용보기</button>
                     </div>
-                    <div class="card-content-expanded">${rev.content || ''}</div>
+                    <div class="card-content-expanded">${rev["내용"] || rev.content || ''}</div>
                 </div>
             `;
         });
@@ -512,21 +638,28 @@
 
     window.onmessage = (event) => {
         const data = event.data;
-        if (data.type === 'LOGIN_SUCCESS') { closeLoginModal(); openModal(); }
-        if (data.type === 'SHOW_LOGIN_MODAL') { openLoginModal(); }
-        if (data.type === 'LOGIN_ERROR') { showCustomAlert("로그인 정보가 올바르지 않습니다."); }
-        if (data.type === 'REVIEW_SUBMITTED_SUCCESS') { showCustomAlert("소중한 후기 감사합니다! 관리자 확인 후 곧 등록됩니다."); }
-        
-        // Velo에서 직접 데이터를 내려주는 경우도 대비
         if (data.type === 'renderDetail') {
             const item = data.item;
+            currentProduct = item;
             document.getElementById('pDescription').innerHTML = item.description || item["상품설명"] || "";
             document.getElementById('pTravelDate').innerHTML = item.traveldate || item["여행일정"] || "";
             if(item.title_fld || item["상품명"]) document.getElementById('scheduleMainTitle').innerText = item.title_fld || item["상품명"];
             document.getElementById('pInclude').innerHTML = item.included || item["포함사항"] || "";
             document.getElementById('pExclude').innerHTML = item.excluded || item["불포함사항"] || "";
             document.getElementById('pReference').innerHTML = item.reference || item["참고사항"] || "";
-            if (item.reviews) renderReviews(item.reviews);
+            
+            // iframe 통신 시에도 서버 리뷰 목록 다시 로드
+            fetch('/api/reviews')
+                .then(res => res.json())
+                .then(allReviews => {
+                    const productId = item["상품코드"] || item._id;
+                    const filteredReviews = allReviews.filter(r => r["상품코드"] === productId);
+                    renderReviews(filteredReviews);
+                })
+                .catch(() => {
+                    if (item.reviews) renderReviews(item.reviews);
+                });
+
             setTimeout(sendHeight, 300);
         }
     };

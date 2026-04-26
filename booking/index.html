@@ -131,7 +131,7 @@
                 </div>
                 <table class="receipt-table">
                     <thead><tr><th style="width:40%">상품명</th><th>출발 날짜</th><th>인원</th><th>상태</th></tr></thead>
-                    <tbody><tr><td id="receipt-pname" style="text-align:left;">-</td><td id="out-date">-</td><td id="out-people">-</td><td style="color:var(--accent)">예약 접수완료</td></tr></tbody>
+                    <tbody><tr><td id="receipt-pname" style="text-align:left;">-</td><td id="out-date">-</td><td id="out-people">-</td><td id="out-status" style="color:var(--accent)">-</td></tr></tbody>
                 </table>
                 <div id="notice-bank" class="notice-box" style="display:none; background: #fff; border: 1px solid var(--border-dark);">상세 계좌 정보는 예약 확정 후 제공됩니다.</div>
                 <div id="notice-mileage" class="notice-box" style="display:none; background: #f0fdf4; border: 1px solid #bbf7d0;">마일리지가 정상 차감되었습니다.</div>
@@ -143,7 +143,9 @@
     <div id="footer-load"></div>
 
     <script>
-        // 외부 파일 로드 함수 (사장님 방식)
+        let userMileage = 0;
+        let rawTotalPrice = 0;
+
         async function loadComponent(id, filePath) {
             try {
                 const response = await fetch(filePath);
@@ -161,50 +163,152 @@
             } catch (e) { console.error(e); }
         }
 
-        // 페이지 로드 시 실행
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             loadComponent('header-load', '../header.html');
             loadComponent('footer-load', '../footer.html');
-            
-            // 예약 데이터 초기화 실행
-            const sampleItem = {
-                title: "마닐라 프리미엄 패키지", adult: 2, child: 1, totalPrice: 450000,
-                imageUrl: "../images/tour-001.webp", mileage: 500000
-            };
-            renderData(sampleItem);
+
+            const params = new URLSearchParams(window.location.search);
+            const productId = params.get('id');
+            const adultCount = parseInt(params.get('adult')) || 1;
+            const childCount = parseInt(params.get('child')) || 0;
+
+            const loginData = localStorage.getItem('loggedInUser');
+            let loginId = "";
+            if (loginData) {
+                const parsed = JSON.parse(loginData);
+                loginId = parsed["아이디"];
+            }
+
+            if (loginId) {
+                try {
+                    const resMem = await fetch('../json/members.json');
+                    const members = await resMem.json();
+                    const user = members.find(m => String(m["아이디"]) === String(loginId));
+                    if (user) {
+                        document.getElementById('in-name').value = user["이름"] || "";
+                        document.getElementById('in-phone').value = user["휴대폰"] || "";
+                        document.getElementById('in-email').value = user["이메일"] || "";
+                        userMileage = parseInt(user["마일리지"]) || 0;
+                        document.getElementById('mileage-balance').innerText = `보유 마일리지: ${userMileage.toLocaleString()}원`;
+                    }
+                } catch (e) { console.error("회원정보 로드 실패", e); }
+            }
+
+            if (productId) {
+                try {
+                    const resProd = await fetch('../json/products.json');
+                    const products = await resProd.json();
+                    const item = products.find(p => String(p["상품코드"]) === String(productId));
+
+                    if (item) {
+                        const pName = item["상품명"];
+                        document.getElementById('display-pname').innerText = pName;
+                        document.getElementById('receipt-pname').innerText = pName;
+                        document.getElementById('hidden-pname').value = pName;
+                        
+                        if (item["메인사진"]) {
+                            document.getElementById('main-product-img').src = "../" + item["메인사진"];
+                        }
+
+                        document.getElementById('display-in-adult').innerText = adultCount;
+                        document.getElementById('display-in-child').innerText = childCount;
+
+                        const adultPrice = parseInt(item["성인요금"]) || 0;
+                        const childPrice = parseInt(item["아동요금"]) || 0;
+                        rawTotalPrice = (adultPrice * adultCount) + (childPrice * childCount);
+
+                        const formattedPrice = rawTotalPrice.toLocaleString() + '원';
+                        document.getElementById('header-price').innerText = formattedPrice;
+                        document.getElementById('side-total-price').innerText = formattedPrice;
+                        document.getElementById('hidden-price').value = rawTotalPrice;
+                    }
+                } catch (e) { console.error("상품정보 로드 실패", e); }
+            }
+            togglePayInfo();
         });
 
-        // --- 기존 예약 로직 함수들 ---
-        let userMileage = 0;
-        let rawTotalPrice = 0;
-
-        function renderData(item) {
-            userMileage = item.mileage || 0;
-            document.getElementById('mileage-balance').innerText = `보유 마일리지: ${userMileage.toLocaleString()}원`;
-            if (item.imageUrl) document.getElementById('main-product-img').src = item.imageUrl;
-            document.getElementById('display-pname').innerText = item.title;
-            document.getElementById('receipt-pname').innerText = item.title;
-            document.getElementById('hidden-pname').value = item.title;
-            document.getElementById('display-in-adult').innerText = item.adult;
-            document.getElementById('display-in-child').innerText = item.child;
-            rawTotalPrice = item.totalPrice;
-            const formattedPrice = rawTotalPrice.toLocaleString() + '원';
-            document.getElementById('header-price').innerText = formattedPrice;
-            document.getElementById('side-total-price').innerText = formattedPrice;
-            document.getElementById('hidden-price').value = rawTotalPrice;
-        }
-
         function togglePayInfo() {
-            const payVal = document.querySelector('input[name="pay"]:checked').value;
+            const payOption = document.querySelector('input[name="pay"]:checked');
+            if(!payOption) return;
+            const payVal = payOption.value;
             document.getElementById('mileage-balance').style.display = (payVal === '마일리지') ? 'block' : 'none';
             document.getElementById('side-notice-bank').style.display = (payVal === '무통장') ? 'block' : 'none';
         }
 
-        function processBooking() {
+        async function processBooking() {
+            if (!document.getElementById('in-name').value) { alert("성함을 입력해주세요."); return; }
+            if (!document.getElementById('in-date').value) { alert("날짜를 선택해주세요."); return; }
+
+            const payVal = document.querySelector('input[name="pay"]:checked').value;
+            
+            if (payVal === '마일리지' && userMileage < rawTotalPrice) {
+                alert("마일리지가 부족합니다. 무통장 입금을 이용해주세요.");
+                return;
+            }
+
             const resNo = new Date().toISOString().slice(0,10).replace(/-/g,"") + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
             document.getElementById('out-res-no').innerText = resNo;
+            document.getElementById('hidden-res-no').value = resNo;
+
+            const bookingStatus = (payVal === '마일리지') ? '예약완료' : '예약접수';
+            document.getElementById('out-status').innerText = bookingStatus;
+
+            // -----------------------------------------------------------------
+            // [수정] 신청일(실시간 날짜/시간) 필드 추가
+            // -----------------------------------------------------------------
+            const currentLogin = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
+            const serverBookingData = {
+                "예약번호": resNo,
+                "아이디": currentLogin["아이디"] || "guest",
+                "상품명": document.getElementById('hidden-pname').value,
+                "출발날짜": document.getElementById('in-date').value,
+                "성인수": parseInt(document.getElementById('display-in-adult').innerText),
+                "아동수": parseInt(document.getElementById('display-in-child').innerText),
+                "총금액": rawTotalPrice,
+                "결제수단": payVal,
+                "예약상태": bookingStatus,
+                "이미지": document.getElementById('main-product-img').getAttribute('src').replace('../', ''),
+                "신청일": new Date().toLocaleString() // 실시간 신청 시점 저장
+            };
+
+            // 1. 서버 bookings.json에 물리적 저장
+            try {
+                await fetch('/api/booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverBookingData)
+                });
+            } catch (e) { console.error("서버 예약 저장 실패", e); }
+
+            // 2. localStorage에 저장
+            const localBookingData = {
+                ...serverBookingData,
+                people: `성인 ${serverBookingData["성인수"]} / 아동 ${serverBookingData["아동수"]}`
+            };
+            let currentBookings = JSON.parse(localStorage.getItem('myBookings')) || [];
+            currentBookings.push(localBookingData);
+            localStorage.setItem('myBookings', JSON.stringify(currentBookings));
+
+            // Netlify 전송 (백업용)
+            const form = document.getElementById('booking-form');
+            const formData = new FormData(form);
+            formData.append('status', bookingStatus);
+            formData.append('applied_at', serverBookingData["신청일"]); // Netlify 폼에도 추가
+            fetch("/", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(formData).toString(),
+            }).catch(e => console.error(e));
+
+            // 화면 전환
             document.getElementById('step1-view').style.display = 'none';
             document.getElementById('step2-view').style.display = 'block';
+
+            document.getElementById('notice-bank').style.display = (payVal === '무통장') ? 'block' : 'none';
+            document.getElementById('notice-mileage').style.display = (payVal === '마일리지') ? 'block' : 'none';
+            document.getElementById('out-date').innerText = document.getElementById('in-date').value;
+            document.getElementById('out-people').innerText = localBookingData.people;
+
             window.scrollTo(0, 0);
         }
     </script>

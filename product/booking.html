@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        /* [핵심 수정] body 스타일을 wrapper로 분리하여 index.html 내에서도 너비 유지 */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
         body, html {
@@ -14,16 +13,15 @@
             color: #333;
         }
 
-        /* index.html에서 불러와도 너비가 깨지지 않게 보장하는 핵심 영역 */
         #content-wrapper {
             width: 100%;
-            min-width: 320px; /* 모바일 최소치 */
+            min-width: 320px;
             margin: 0 auto;
             overflow: hidden;
         }
 
         .container {
-            max-width: 1200px; /* 원래 디자인 너비 유지 */
+            max-width: 1200px;
             margin: 20px auto;
             padding: 0 20px;
             display: flex;
@@ -31,7 +29,6 @@
             box-sizing: border-box;
         }
 
-        /* --- 이하 주신 디자인 코드 토씨 하나 안 틀리고 그대로 유지 --- */
         .image-section { flex: 1.2; width: 100%; position: relative; overflow: hidden; }
         .slider-container {
             position: relative;
@@ -243,7 +240,6 @@
 </div>
 
 <script>
-    /* 로직 유지 */
     let baseAdultPrice = 0;
     let baseChildPrice = 0;
     let currentItemData = null; 
@@ -251,30 +247,22 @@
     let totalSlides = 0;
     let autoSlideInterval = null;
 
-    // [정석 수신 로직] 주소창의 id를 확인하고 JSON에서 데이터를 불러옴
     window.onload = async function() {
         try {
-            // 1. URL 파라미터에서 상품코드(id) 가져오기
             const params = new URLSearchParams(window.parent.location.search || window.location.search);
             const productId = params.get('id');
 
-            if (!productId) {
-                console.error("상품코드가 없습니다.");
-                return;
-            }
+            if (!productId) return;
 
-            // 2. JSON 데이터 호출
             const response = await fetch('../json/products.json');
             const allProducts = await response.json();
 
-            // 3. 상품코드가 일치하는 데이터 찾기
             const item = allProducts.find(p => String(p["상품코드"]) === String(productId));
 
             if (item) {
                 currentItemData = item;
                 renderPage(item);
-            } else {
-                console.error("해당 상품을 찾을 수 없습니다.");
+                checkWishStatus(productId); 
             }
         } catch (error) {
             console.error("데이터 로드 중 오류 발생:", error);
@@ -282,7 +270,6 @@
     };
 
     function renderPage(data) {
-        // [매칭] JSON 필드명 기준 매칭
         const title = data["상품명"] || '';
         const schedule = data["일정"] ? ` / ${data["일정"]}` : '';
         document.getElementById('pTitle').innerHTML = `${title}<span class="schedule-text">${schedule}</span>`;
@@ -294,7 +281,6 @@
         wrapper.innerHTML = '';
         pagination.innerHTML = '';
 
-        // [매칭] 상품이미지 필드 처리 (콤마 구분 또는 배열 대비)
         let images = [];
         if (Array.isArray(data["상품이미지"])) {
             images = data["상품이미지"].filter(url => url).slice(0, 10);
@@ -306,9 +292,8 @@
 
         images.forEach((imgUrl, idx) => {
             const imgTag = document.createElement('img');
-            // 경로가 파일명만 있다면 상위 폴더 기준 추가
-            imgTag.src = imgUrl.startsWith('http') ? imgUrl : '../' + imgUrl;
-            imgTag.alt = `상품 이미지 ${idx + 1}`;
+            imgTag.src = (imgUrl.startsWith('http') || imgUrl.startsWith('img/')) ? imgUrl : '../' + imgUrl;
+            imgTag.onerror = function() { this.src = 'https://via.placeholder.com/600x450?text=No+Image'; };
             wrapper.appendChild(imgTag);
 
             const dot = document.createElement('div');
@@ -329,7 +314,6 @@
 
         startAutoSlide();
 
-        // [매칭] 성인요금, 아동요금 매칭
         baseAdultPrice = Number(data["성인요금"]) || 0;
         baseChildPrice = Number(data["아동요금"]) || 0;
         document.getElementById('adultUnitPrice').innerText = baseAdultPrice.toLocaleString();
@@ -381,16 +365,100 @@
     }
 
     function requestBooking() {
-        const user = localStorage.getItem('user');
-        if (!user) { openLoginModal(); return; }
-        alert("예약이 완료되었습니다!");
-        location.href = "../index.html";
+        const userStr = localStorage.getItem('loggedInUser');
+        const pCode = document.getElementById('pCode').innerText;
+        const adultCount = document.getElementById('adultQty').value;
+        const childCount = document.getElementById('childQty').value;
+
+        if (!userStr) { 
+            alert("회원 전용 서비스입니다."); 
+            top.location.href = "../header/login.html"; 
+            return; 
+        }
+
+        top.location.href = "../booking/index.html?id=" + pCode + "&adult=" + adultCount + "&child=" + childCount;
     }
 
-    function handleWishClick() {
+    // [핵심 수정] 찜목록 버튼 클릭 핸들러 (메인사진 정보 추출 로직 포함)
+    async function handleWishClick() {
+        const userStr = localStorage.getItem('loggedInUser');
+        if (!userStr) {
+            alert("로그인 후 이용 가능합니다.");
+            top.location.href = "../header/login.html";
+            return;
+        }
+
+        const userObj = JSON.parse(userStr);
+        const userId = userObj["아이디"]; 
         const btn = document.getElementById('wishBtn');
-        btn.classList.toggle('active');
-        alert(btn.classList.contains('active') ? "관심 상품에 추가되었습니다." : "관심 상품에서 제거되었습니다.");
+        const pCode = document.getElementById('pCode').innerText;
+        const isAdding = !btn.classList.contains('active');
+
+        try {
+            const res = await fetch('../json/wishlist.json');
+            let wishlist = [];
+            if (res.ok) wishlist = await res.json();
+
+            if (isAdding) {
+                if (!wishlist.some(w => w["아이디"] === userId && w["상품명"] === currentItemData["상품명"])) {
+                    
+                    // 현재 상품 데이터에서 첫 번째 이미지 경로 추출 (메인사진으로 사용)
+                    let mainImg = "";
+                    if (currentItemData["상품이미지"]) {
+                        if (Array.isArray(currentItemData["상품이미지"])) {
+                            mainImg = currentItemData["상품이미지"][0];
+                        } else {
+                            mainImg = currentItemData["상품이미지"].split(',')[0].trim();
+                        }
+                    }
+                    
+                    // 찜목록 데이터에 "메인사진" 키값 추가하여 저장
+                    wishlist.push({
+                        "아이디": userId,
+                        "상품명": currentItemData["상품명"],
+                        "메인사진": mainImg, 
+                        "등록일": new Date().toLocaleString(),
+                        "상품코드": pCode
+                    });
+                }
+            } else {
+                wishlist = wishlist.filter(w => !(w["아이디"] === userId && w["상품명"] === currentItemData["상품명"]));
+            }
+
+            const saveRes = await fetch('/save-json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: 'wishlist.json', data: wishlist })
+            });
+
+            if (saveRes.ok) {
+                btn.classList.toggle('active');
+                alert(isAdding ? "관심 상품에 추가되었습니다." : "관심 상품에서 제거되었습니다.");
+            } else {
+                alert("찜 목록 업데이트에 실패했습니다.");
+            }
+        } catch (e) {
+            console.error("Wishlist error:", e);
+            alert("서버 통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    async function checkWishStatus(productId) {
+        const userStr = localStorage.getItem('loggedInUser');
+        if (!userStr) return;
+        
+        const userObj = JSON.parse(userStr);
+        const userId = userObj["아이디"];
+
+        try {
+            const res = await fetch('../json/wishlist.json');
+            if (res.ok) {
+                const wishlist = await res.json();
+                if (wishlist.some(w => w["아이디"] === userId && w["상품코드"] === productId)) {
+                    document.getElementById('wishBtn').classList.add('active');
+                }
+            }
+        } catch (e) {}
     }
 
     function navProduct(dir) {
@@ -402,7 +470,6 @@
     function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
     function submitLogin() { alert("로그인 되었습니다."); closeLoginModal(); }
-
 </script>
 </body>
 </html>

@@ -240,7 +240,6 @@
         /* PC 레이아웃 수정 및 모바일 메뉴 숨김 */
         @media (min-width: 769px) {
             .top-utility { justify-content: flex-end; padding: 8px 60px; gap: 25px; }
-            /* header-main 정렬 수정 */
             .header-main { flex-direction: row; justify-content: space-between; align-items: center; padding: 30px 60px; gap: 0; }
             
             .left-icons { order: 1; flex: 1; justify-content: flex-start; gap: 40px; display: flex; } 
@@ -248,9 +247,8 @@
             .search-container { order: 3; flex: 1; padding: 0; margin: 0; display: flex; justify-content: flex-end; } 
             .search-box { width: 280px; } 
             
-            /* PC에서 모바일 햄버거 메뉴 및 관련 바 숨김 */
             .right-menu { display: none !important; } 
-            .mobile-action-bar { display: contents; } /* 자식인 left-icons가 header-main의 flex 영향을 받도록 함 */
+            .mobile-action-bar { display: contents; } 
             
             .nav-container { display: block; }
             .logo-main { font-size: 38px; }
@@ -343,14 +341,14 @@
     </div>
 
     <script>
-    // 1. 로그인 데이터 감시
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     let isLoggedIn = !!loggedInUser; 
 
     function executeSearch() {
         const val = document.getElementById('headerSearchInput').value;
         if (val.trim() === "") return;
-        location.href = `/search.html?q=${encodeURIComponent(val)}`;
+        // 경로를 /header/search.html로 고정하고 검색어 파라미터(q)를 붙입니다.
+        location.href = `/header/search.html?q=${encodeURIComponent(val)}`;
     }
 
     function checkAuth(val) {
@@ -366,14 +364,24 @@
     function btn(val) {
         if (!val) return;
 
-        // 2. 로그아웃 로직 처리
         if (val === 'logout') {
             if(confirm("로그아웃 하시겠습니까?")) {
                 localStorage.removeItem('loggedInUser');
-                location.reload(); // 현재 페이지 새로고침
+                location.href = '/index.html';
             }
             return;
         }
+
+        if (val === 'charge') {
+            location.href = '/balance/deposit.html';
+            return;
+        }
+
+        if (val === 'withdraw') {
+            location.href = '/balance/withdraw.html';
+            return;
+        }
+        
 
         const menuMap = {
             'america-travel': '/america/index.html?cat=미국여행',
@@ -393,8 +401,18 @@
             location.href = '/header/login.html';
         } else if (val === 'info') {
             location.href = '/header/info.html';
-                 
-        
+        } else if (val === 'check') {
+            location.href = '/header/reser.html'; 
+        } else if (val === 'wish') {
+            location.href = '/header/mypage-wish.html';  
+        } else if (val === 'my-menu') {
+            location.href = '/header/mymenu.html';
+        } else if (val === 'review') {
+            location.href = '/header/review.html';    
+        } else if (val === 'announcement') {
+            location.href = '/header/announcement.html';          
+        } else if (val === 'support') {
+            location.href = '/header/support.html';       
         } else {
             location.href = `/${val}.html`;
         }
@@ -406,7 +424,6 @@
         document.getElementById('mOverlay').classList.toggle('active');
     }
 
-    // 3. UI 업데이트 시 실제 이름 반영
     window.onload = () => {
         updateUI();
     };
@@ -424,7 +441,6 @@
 
         if (isLoggedIn && loggedInUser) {
             el.nick.classList.remove('hidden');
-            // '성함'은 members.json에 저장된 필드명에 맞춰주세요.
             el.nick.innerText = `${loggedInUser["닉네임"] || "사용자"}님 반가워요!`; 
             el.info.classList.remove('hidden');
             el.charge.classList.remove('hidden');
@@ -442,7 +458,6 @@
             el.signup.classList.remove('hidden');
         }
     }
-    updateUI();
 </script>
 </body>
 </html>

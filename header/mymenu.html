@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        :root {
+            --primary-navy: #002c5f;
+            --bg-main: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-light: #f3f4f6;
+            --primary-color: #007bff; /* 후기 강조색 */
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            margin: 0; padding: 0;
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* 헤더/푸터 로드 영역 */
+        #header-load { 
+            min-height: 60px; 
+            margin-bottom: 60px; 
+        }
+        #footer-load { 
+            margin-top: 80px; 
+        }
+
+        /* [수정] 폭을 1000px로 확장 */
+        .my-container { max-width: 1000px; margin: 0 auto; padding: 30px 20px; flex: 1; width: 100%; box-sizing: border-box; }
+
+        .profile-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .profile-info h1 {
+            font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -1px;
+        }
+
+        .mileage-card {
+            background: #fff; padding: 30px; border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            margin-bottom: 30px; border: 1px solid var(--border-light);
+            position: relative;
+        }
+        
+        .mileage-card::after {
+            content: ""; position: absolute; top: 30px; left: 0; width: 4px;
+            height: calc(100% - 60px); background-color: var(--primary-navy);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .mileage-label { font-size: 14px; color: var(--text-muted); font-weight: 600; padding-left: 15px; }
+
+        .mileage-amount {
+            font-size: 36px; font-weight: 800; margin-top: 10px;
+            display: flex; align-items: baseline; gap: 6px;
+            color: var(--primary-navy); padding-left: 15px;
+        }
+
+        .mileage-amount span { font-size: 20px; font-weight: 500; color: var(--text-main); }
+
+        .menu-list { margin-bottom: 30px; }
+
+        .menu-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px; background: #fff; border-radius: 16px;
+            text-decoration: none; color: var(--text-main);
+            margin-bottom: 12px; border: 1px solid var(--border-light);
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .menu-item:hover { background-color: #f9fafb; transform: translateX(5px); }
+
+        .menu-content { display: flex; align-items: center; gap: 15px; }
+        .menu-text { font-size: 16px; font-weight: 600; }
+        .arrow-icon { font-size: 18px; color: #d1d5db; }
+
+        /* [추가] 후기 리스트 디자인 */
+        #reviewListArea {
+            max-height: 450px; 
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 8px;
+            margin: 10px 0 20px 0;
+        }
+
+        #reviewListArea::-webkit-scrollbar {
+            width: 5px;
+        }
+        #reviewListArea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #reviewListArea::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .review-card {
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #fff;
+            text-align: left;
+        }
+        
+        /* [수정] 버튼 깨짐 방지를 위해 gap 추가 및 정렬 유지 */
+        .card-top { display: flex; gap: 20px; cursor: pointer; align-items: center; justify-content: space-between; }
+        
+        /* [수정] 텍스트 영역이 버튼을 밀어내지 않도록 설정 */
+        .card-info { flex: 1; min-width: 0; } 
+        
+        .small-stars { color: #ffc107; font-size: 14px; margin-bottom: 4px; }
+        .card-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-content-expanded { display: none; margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 8px; border-left: 4px solid var(--primary-color); font-size: 14px; color: #444; line-height: 1.6; }
+        .card-meta { font-size: 12px; color: var(--text-muted); }
+        
+        /* [수정] 버튼이 줄어들거나 깨지지 않도록 고정 크기 및 줄바꿈 방지 설정 */
+        .btn-detail-trigger { 
+            flex-shrink: 0; 
+            white-space: nowrap; 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            font-size: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+        }
+
+        @media (max-width: 480px) {
+            .my-container { padding: 20px 15px; }
+            .profile-header { margin-bottom: 20px; }
+            .profile-info h1 { font-size: 22px; }
+            
+            .mileage-card { padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+            .mileage-amount { font-size: 28px; }
+            .mileage-amount span { font-size: 16px; }
+
+            .menu-item { padding: 16px; border-radius: 14px; margin-bottom: 10px; }
+            .menu-text { font-size: 15px; }
+
+            .review-card { padding: 15px; }
+            .card-title { font-size: 15px; }
+            .btn-detail-trigger { padding: 6px 12px; font-size: 11px; }
+            #reviewListArea { max-height: 380px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div class="my-container">
+    <div class="profile-header">
+        <div class="profile-info">
+            <h1 id="user-nickname">불러오는 중...</h1>
+        </div>
+    </div>
+
+    <div class="mileage-card">
+        <div class="mileage-label">보유 마일리지</div>
+        <div class="mileage-amount"><span id="user-mileage">0</span> <span>원</span></div>
+    </div>
+
+    <div class="menu-list">
+        <div class="menu-item" onclick="location.href='../header/info.html'">
+            <div class="menu-content"><span class="menu-text">👤 회원정보</span></div>
+            <span class="arrow-icon">›</span>
+        </div>
+        
+        <div class="menu-item" onclick="getMyReviews()">
+            <div class="menu-content"><span class="menu-text">📝 내후기 보기</span></div>
+            <span class="arrow-icon">›</span>
+        </div>
+        <div id="reviewListArea"></div>
+
+        <div class="menu-item" onclick="location.href='supportlist.html'">
+            <div class="menu-content"><span class="menu-text">🔍 내문의 내역</span></div>
+            <span class="arrow-icon">›</span>
+        </div>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    // [기능] 외부 컴포넌트 로드 함수
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`404: ${filePath} 없음`);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    /**
+     * VS(일반 웹) 환경을 위한 초기 데이터 로드
+     */
+    window.addEventListener('load', async () => {
+        // 컴포넌트 로드
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        
+        if (loggedInUser) {
+            document.getElementById('user-nickname').innerText = (loggedInUser.닉네임 || loggedInUser.아이디) + " 님";
+            
+            // members.json에서 최신 마일리지 정보 가져오기
+            try {
+                const response = await fetch('../json/members.json?v=' + Date.now());
+                const members = await response.json();
+                const currentMember = members.find(m => m.아이디 === loggedInUser.아이디);
+                
+                if (currentMember) {
+                    document.getElementById('user-mileage').innerText = (Number(currentMember.마일리지) || 0).toLocaleString();
+                } else {
+                    document.getElementById('user-mileage').innerText = (Number(loggedInUser.마일리지) || 0).toLocaleString();
+                }
+            } catch (error) {
+                console.error("마일리지 로드 실패:", error);
+                document.getElementById('user-mileage').innerText = (Number(loggedInUser.마일리지) || 0).toLocaleString();
+            }
+        } else {
+            document.getElementById('user-nickname').innerText = "로그인 필요";
+        }
+    });
+
+    // 후기 보기 버튼 클릭 시 토글 로직
+    async function getMyReviews() {
+        const area = document.getElementById('reviewListArea');
+        
+        if (area.innerHTML.trim() !== "") {
+            area.innerHTML = "";
+            return;
+        }
+
+        try {
+            const response = await fetch('../json/reviews.json?v=' + Date.now());
+            const allReviews = await response.json();
+            
+            const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+            if (!loggedInUser) return;
+
+            const myReviews = allReviews.filter(rev => rev.아이디 === loggedInUser.아이디);
+            renderMyReviews(myReviews);
+        } catch (e) {
+            console.error("후기 로드 실패:", e);
+            area.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:14px;">데이터를 불러올 수 없습니다.</div>';
+        }
+    }
+
+    // 후기 리스트 생성 (상품명 매칭 및 이미지 기반 필드명 반영)
+    async function renderMyReviews(reviews) {
+        const area = document.getElementById('reviewListArea');
+        area.innerHTML = ''; 
+
+        if (!reviews || reviews.length === 0) {
+            area.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:14px;">작성한 후기가 없습니다.</div>';
+            return;
+        }
+
+        try {
+            const pResponse = await fetch('../json/products.json?v=' + Date.now());
+            const allProducts = await pResponse.json();
+
+            reviews.forEach(rev => {
+                const date = rev.생성날짜 || (rev._createdDate ? new Date(rev._createdDate).toLocaleDateString() : '');
+                const starStr = '★'.repeat(rev.별점 || 5) + '☆'.repeat(5 - (rev.별점 || 5));
+                
+                const product = allProducts.find(p => String(p.상품코드) === String(rev.상품코드));
+                const productName = product ? product.상품명 : "정보 없음";
+                
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <div class="card-top" onclick="toggleDetail(this)">
+                        <div class="card-info">
+                            <div class="small-stars">${starStr}</div>
+                            <div style="font-size:13px; color:var(--primary-color); font-weight:700; margin-bottom:4px;">[${productName}]</div>
+                            <div class="card-title">${rev.제목 || '제목 없음'}</div>
+                            <div class="card-meta">작성일: ${date}</div>
+                        </div>
+                        <button class="btn-detail-trigger">내용보기</button>
+                    </div>
+                    <div class="card-content-expanded">${rev.내용 || '내용이 없습니다.'}</div>
+                `;
+                area.appendChild(card);
+            });
+        } catch (err) {
+            console.error("상품명 로드 실패:", err);
+            reviews.forEach(rev => {
+                const date = rev.생성날짜 || '';
+                const starStr = '★'.repeat(rev.별점 || 5) + '☆'.repeat(5 - (rev.별점 || 5));
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <div class="card-top" onclick="toggleDetail(this)">
+                        <div class="card-info">
+                            <div class="small-stars">${starStr}</div>
+                            <div class="card-title">${rev.제목 || '제목 없음'}</div>
+                            <div class="card-meta">작성일: ${date}</div>
+                        </div>
+                        <button class="btn-detail-trigger">내용보기</button>
+                    </div>
+                    <div class="card-content-expanded">${rev.내용 || '내용이 없습니다.'}</div>
+                `;
+                area.appendChild(card);
+            });
+        }
+    }
+
+    // 상세 내용 토글 (기존 로직 유지)
+    function toggleDetail(element) {
+        const card = element.closest('.review-card');
+        const content = card.querySelector('.card-content-expanded');
+        const btn = card.querySelector('.btn-detail-trigger');
+        const isVisible = content.style.display === 'block';
+        
+        content.style.display = isVisible ? 'none' : 'block';
+        btn.innerText = isVisible ? '내용보기' : '닫기';
+    }
+</script>
+</body>
+</html>

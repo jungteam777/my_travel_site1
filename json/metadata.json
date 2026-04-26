@@ -1,5 +1,11 @@
 {
-  "products.json": "여행상품",
+  "bookings.json": "예약관리",
+  "members.json": "회원관리",
+  "products.json": "상품관리",
   "sitesetting.json": "사이트설정",
-  "members.json": "회원관리"
+  "wishlist.json": "찜목록",
+  "deposit.json": "입금관리",
+  "withdraw.json": "출금관리",
+  "reviews.json": "여행후기",
+  "support.json": "문의관리"
 }

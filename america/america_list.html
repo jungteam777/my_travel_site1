@@ -93,11 +93,11 @@ const price = (priceValue > 0)
 
 
             // 이미지 경로 수정 (루트 기준이면 /를 붙이세요)
-            const imgUrl = item["메인사진"] ? ('../' + item["메인사진"]) : 'https://via.placeholder.com/300x180';
+            const imgUrl = item["메인사진"] ? ('../' + item["메인사진"]) : '../images/default.webp';
             
             html += `
                 <div class="product-card">
-                    <img src="${imgUrl}" class="product-img">
+                    <img src="${imgUrl}" class="product-img" onerror="this.onerror=null; this.src='../images/default.webp';">
                     <div class="product-info">
                         <div class="product-title">${item["상품명"]}</div>
                         <div class="product-price">${price}</div>

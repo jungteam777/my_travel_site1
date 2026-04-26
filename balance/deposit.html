@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        /* 기본 배경 화이트 고정 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #ffffff !important;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 헤더/푸터 대응 */
+        #header-load { 
+            min-height: 60px; 
+            width: 100%; 
+        }
+
+        #footer-load { 
+            margin-top: auto;
+            width: 100%; 
+        }
+
+        .wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #003366;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #003366;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+
+        /* 안내 문구 영역 */
+        .notice-container {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        .notice-container div {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 5px;
+            word-break: keep-all;
+        }
+        .notice-container div::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #003366;
+            font-weight: bold;
+        }
+
+        /* 입력 폼 레이아웃 - 모바일 세로 대응 */
+        .form-row {
+            display: flex;
+            flex-direction: column; /* 모바일 우선 세로 배치 */
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f5f9;
+            gap: 10px;
+        }
+
+        .label-cell {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .input-cell {
+            width: 100%;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: #2563eb;
+        }
+
+        .bank-info {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.5;
+            word-break: keep-all;
+        }
+
+        /* 입력창 디자인 */
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px; /* 모바일 자동 줌 방지 */
+            outline: none;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        input:focus { border-color: #003366; box-shadow: 0 0 0 2px rgba(0,51,102,0.05); }
+
+        /* 금액 선택 버튼 - 모바일 2열 정렬 */
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .amount-item { position: relative; }
+        .amount-item input[type="radio"] { position: absolute; opacity: 0; }
+        .amount-item label {
+            display: block;
+            padding: 14px 5px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .amount-item input[type="radio"]:checked + label {
+            background: #003366;
+            color: #fff;
+            border-color: #003366;
+        }
+
+        #directInputContainer { margin-top: 10px; display: none; }
+
+        /* 하단 버튼 - 모바일 2열 나란히 */
+        .action-area {
+            display: flex;
+            gap: 10px;
+            margin: 30px 0;
+        }
+        .btn {
+            flex: 1;
+            height: 54px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-blue { background-color: #003366; color: white; }
+        .btn-gray { background-color: #64748b; color: white; }
+        .btn:active { opacity: 0.7; }
+
+        /* 목록 테이블 최적화 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 450px;
+        }
+        thead th {
+            background-color: #f8fafc;
+            color: #334155;
+            padding: 12px 5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody td {
+            padding: 14px 5px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+        .status-waiting { color: #ef4444; font-weight: 800; }
+        .status-complete { color: #2563eb; font-weight: 800; }
+        .amount-text { font-weight: 700; color: #1e293b; }
+        .empty-row { padding: 40px 0; color: #94a3b8; }
+
+        .page-view { display: none; }
+        .active-view { display: block; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* PC 버전 대응 (601px 이상) */
+        @media (min-width: 601px) {
+            .form-row { flex-direction: row; align-items: center; }
+            .label-cell { width: 150px; }
+            .amount-grid { grid-template-columns: repeat(5, 1fr); }
+            .amount-item[style*="grid-column"] { grid-column: auto !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header-load"></div>
+
+<div class="wrapper">
+    <div id="requestView" class="page-view active-view">
+        <div class="page-title">입금신청</div>
+        <div class="notice-container">
+            <div>입금자명을 입력하시고 신청금액을 선택하시면 됩니다.</div>
+            <div>입금완료 후 3분내로 포인트가 충전되지 않는 경우 문의 바랍니다.</div>
+        </div>
+        
+        <div class="form-row">
+            <div class="label-cell">닉네임</div>
+            <div class="input-cell user-name" id="userName">회원님</div>
+        </div>
+        
+        <div class="form-row">
+            <div class="label-cell">입금은행정보</div>
+            <div class="input-cell bank-info">충전신청 후 우측 하단 상담을 통해 계좌 문의 바랍니다.</div>
+        </div>
+        
+        <div class="form-row">
+            <div class="label-cell">입금자명</div>
+            <div class="input-cell">
+                <input type="text" id="depositorName" placeholder="입금자 성함 입력">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="label-cell">신청금액</div>
+            <div class="input-cell">
+                <div class="amount-grid">
+                    <div class="amount-item"><input type="radio" name="chargeAmt" id="amt1" value="50000" onclick="toggleDirect(false)"><label for="amt1">50,000</label></div>
+                    <div class="amount-item"><input type="radio" name="chargeAmt" id="amt2" value="100000" onclick="toggleDirect(false)"><label for="amt2">100,000</label></div>
+                    <div class="amount-item"><input type="radio" name="chargeAmt" id="amt3" value="300000" onclick="toggleDirect(false)"><label for="amt3">300,000</label></div>
+                    <div class="amount-item"><input type="radio" name="chargeAmt" id="amt4" value="1000000" onclick="toggleDirect(false)"><label for="amt4">1,000,000</label></div>
+                    <div class="amount-item" style="grid-column: span 2;"><input type="radio" name="chargeAmt" id="amtDirect" value="direct" onclick="toggleDirect(true)"><label for="amtDirect">직접입력</label></div>
+                </div>
+                <div id="directInputContainer">
+                    <input type="text" id="directAmount" placeholder="숫자만 입력" oninput="formatInputMoney(this)">
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-area">
+            <button class="btn btn-blue" onclick="doSubmit()">신청하기</button>
+            <button class="btn btn-gray" onclick="goList()">입금목록</button>
+        </div>
+    </div>
+
+    <div id="listView" class="page-view">
+        <div class="page-title">입금신청목록</div>
+        <div class="notice-container">
+            <div>입금완료 후 3분내로 포인트가 충전되지 않는 경우 문의 바랍니다.</div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>입금자</th>
+                        <th>입금액</th>
+                        <th>신청일</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody id="listBody">
+                    <tr><td colspan="4" class="empty-row">데이터를 불러오는 중...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="action-area">
+            <button class="btn btn-blue" onclick="showView('requestView')">충전신청</button>
+            <button class="btn btn-gray" onclick="location.reload()">마일리지보기</button>
+        </div>
+    </div>
+</div>
+
+<div id="footer-load"></div>
+
+<script>
+    async function loadComponent(id, filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`404: ${filePath} 없음`);
+            const htmlContent = await response.text();
+            const target = document.getElementById(id);
+            target.innerHTML = htmlContent;
+            
+            const scripts = target.querySelectorAll("script");
+            for (const oldScript of scripts) {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.text = oldScript.text;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function formatInputMoney(obj) {
+        let value = obj.value.replace(/[^0-9]/g, "");
+        if (value.length > 0) {
+            obj.value = Number(value).toLocaleString();
+        } else {
+            obj.value = "";
+        }
+    }
+
+    function showView(viewId) {
+        document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active-view'));
+        document.getElementById(viewId).classList.add('active-view');
+        window.scrollTo(0,0);
+        if(viewId === 'listView') renderList();
+    }
+
+    function toggleDirect(isDirect) {
+        const container = document.getElementById('directInputContainer');
+        container.style.display = isDirect ? 'block' : 'none';
+        if(!isDirect) document.getElementById('directAmount').value = "";
+    }
+
+    async function doSubmit() {
+        const name = document.getElementById('depositorName').value;
+        let amount = "";
+        const selected = document.querySelector('input[name="chargeAmt"]:checked');
+        
+        if(!name) { alert("입금자명을 입력해주세요."); return; }
+        if(!selected) { alert("충전하실 금액을 선택해주세요."); return; }
+        
+        if(selected.value === 'direct') {
+            amount = document.getElementById('directAmount').value.replace(/,/g, "");
+        } else {
+            amount = selected.value;
+        }
+        
+        if(!amount || Number(amount) <= 0) { alert("금액을 정확히 입력해주세요."); return; }
+
+        const loggedUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if(!loggedUser || !loggedUser.아이디) {
+            alert("로그인 정보가 없습니다.");
+            return;
+        }
+        const currentId = loggedUser.아이디;
+
+        let currentNickname = "회원"; 
+        try {
+            const memRes = await fetch('../json/members.json');
+            const members = await memRes.json();
+            const memberInfo = members.find(m => m.아이디 === currentId);
+            if(memberInfo) {
+                currentNickname = memberInfo.닉네임;
+            }
+        } catch (e) {
+            console.error("멤버 정보를 불러오지 못했습니다.", e);
+        }
+
+        const now = new Date();
+        const dateStr = (now.getMonth() + 1) + "-" + now.getDate() + " " + now.getHours() + ":" + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+
+        const newItem = {
+            "아이디": currentId,
+            "닉네임": currentNickname,
+            "입금자명": name,
+            "금액": Number(amount),
+            "상태": "처리대기",
+            "신청날짜": dateStr
+        };
+        
+        try {
+            const response = await fetch('/api/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newItem)
+            });
+
+            if (response.ok) {
+                alert("입금 신청이 완료되었습니다.");
+                document.getElementById('depositorName').value = "";
+                if(selected) selected.checked = false;
+                toggleDirect(false);
+                goList();
+            } else {
+                alert("서버 저장에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("네트워크 오류:", error);
+            alert("서버와 통신할 수 없습니다.");
+        }
+    }
+
+    function goList() {
+        showView('listView');
+    }
+
+    async function renderList() {
+        const listBody = document.getElementById('listBody');
+        listBody.innerHTML = '<tr><td colspan="4" class="empty-row">데이터를 불러오는 중...</td></tr>';
+        
+        const loggedUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        const currentId = loggedUser ? loggedUser.아이디 : null;
+
+        try {
+            const response = await fetch('../json/deposit.json?v=' + Date.now());
+            if (!response.ok) throw new Error("파일 없음");
+            
+            const allDeposits = await response.json();
+            const myDeposits = allDeposits.filter(item => item.아이디 === currentId);
+            
+            listBody.innerHTML = "";
+            
+            if (myDeposits.length > 0) {
+                myDeposits.forEach(item => {
+                    const row = document.createElement('tr');
+                    const statusClass = item.상태 === "처리대기" ? "status-waiting" : "status-complete";
+                    row.innerHTML = `
+                        <td>${item.입금자명}</td>
+                        <td class="amount-text">${Number(item.금액).toLocaleString()}원</td>
+                        <td>${item.신청날짜}</td>
+                        <td class="${statusClass}">${item.상태}</td>
+                    `;
+                    listBody.appendChild(row);
+                });
+            } else {
+                listBody.innerHTML = '<tr><td colspan="4" class="empty-row">신청 내역이 없습니다.</td></tr>';
+            }
+        } catch (e) {
+            listBody.innerHTML = '<tr><td colspan="4" class="empty-row">신청 내역이 없습니다.</td></tr>';
+        }
+    }
+
+    window.addEventListener('load', () => {
+        loadComponent('header-load', '../header.html');
+        loadComponent('footer-load', '../footer.html');
+
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+        if(user && user.아이디) {
+            document.getElementById('userName').innerText = (user.닉네임 || user.이름 || '회원') + '님';
+        } else {
+            document.getElementById('userName').innerText = '관리자님';
+        }
+    });
+</script>
+
+</body>
+</html>
